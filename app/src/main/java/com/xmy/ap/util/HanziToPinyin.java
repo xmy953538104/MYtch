@@ -364,7 +364,9 @@ public class HanziToPinyin {
                     return sInstance;
                 }
             }
-            if (sInstance == null) {//这个判断是用于处理国产ROM的兼容性问�?                if (Locale.CHINA.equals(Locale.getDefault())) {
+            if (sInstance == null) {
+                // 这个判断是用于处理国产ROM的兼容性问题
+                if (Locale.CHINA.equals(Locale.getDefault())) {
                     sInstance = new HanziToPinyin(true);
                     return sInstance;
                 }
