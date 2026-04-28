@@ -253,7 +253,7 @@ class APApplication : Application(), Thread.UncaughtExceptionHandler {
             exitProcess(0)
         }
 
-        if (!BuildConfig.DEBUG && !verifyAppSignature("1x2twMoHvfWUODv7KkRRNKBzOfEqJwRKGzJpgaz18xk=")) {
+        if (!BuildConfig.DEBUG && !verifyAppSignature("P+zzpyyg4PJJkdSecwbvSnEXEfSKZgcHVesCN+yz7ZQ=")) {
             while (true) {
                 val intent = Intent(Intent.ACTION_DELETE)
                 intent.data = "package:$packageName".toUri()
