@@ -15,7 +15,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Security
@@ -57,15 +56,17 @@ import com.xmy.ap.apApp
 import com.xmy.ap.ui.component.ProvideMenuShape
 import com.xmy.ap.ui.component.SearchAppBar
 import com.xmy.ap.ui.component.SwitchItem
+import com.xmy.ap.ui.component.pinnedScrollBehavior
 import com.xmy.ap.ui.viewmodel.SuperUserViewModel
 import com.xmy.ap.util.PkgConfig
 
 
-@OptIn(ExperimentalMaterialApi::class, ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class)
 @Destination<RootGraph>
 @Composable
 fun SuperUserScreen() {
     val viewModel = viewModel<SuperUserViewModel>()
+    val scrollBehavior = pinnedScrollBehavior()
     val scope = rememberCoroutineScope()
 
     LaunchedEffect(Unit) {
@@ -77,10 +78,9 @@ fun SuperUserScreen() {
     Scaffold(
         topBar = {
             SearchAppBar(
-                title = { Text(stringResource(R.string.su_title)) },
                 searchText = viewModel.search,
                 onSearchTextChange = { viewModel.search = it },
-                onClearClick = { viewModel.search = "" },
+                searchBarPlaceHolderText = stringResource(R.string.search_apps),
                 dropdownContent = {
                     var showDropdown by remember { mutableStateOf(false) }
 
@@ -120,7 +120,7 @@ fun SuperUserScreen() {
                             }
                         }
                     }
-                },
+                }
             )
         },
     ) { innerPadding ->

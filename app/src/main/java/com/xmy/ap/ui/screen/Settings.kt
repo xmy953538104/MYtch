@@ -32,11 +32,8 @@ import androidx.compose.material.icons.filled.Commit
 import androidx.compose.material.icons.filled.DarkMode
 import androidx.compose.material.icons.filled.DeveloperMode
 import androidx.compose.material.icons.filled.Engineering
-import androidx.compose.material.icons.filled.FilePresent
 import androidx.compose.material.icons.filled.FormatColorFill
 import androidx.compose.material.icons.filled.InvertColors
-import androidx.compose.material.icons.filled.Key
-import androidx.compose.material.icons.filled.RemoveFromQueue
 import androidx.compose.material.icons.filled.Save
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.Translate
@@ -90,20 +87,13 @@ import com.xmy.ap.BuildConfig
 import com.xmy.ap.Natives
 import com.xmy.ap.R
 import com.xmy.ap.ui.component.SwitchItem
-import com.xmy.ap.ui.component.rememberConfirmDialog
 import com.xmy.ap.ui.component.rememberLoadingDialog
 import com.xmy.ap.ui.theme.refreshTheme
-import com.xmy.ap.util.APatchKeyHelper
 import com.xmy.ap.util.getBugreportFile
-import com.xmy.ap.util.isForceUsingOverlayFS
 import com.xmy.ap.util.isGlobalNamespaceEnabled
-import com.xmy.ap.util.isLiteModeEnabled
 import com.xmy.ap.util.outputStream
-import com.xmy.ap.util.overlayFsAvailable
 import com.xmy.ap.util.rootShellForResult
-import com.xmy.ap.util.setForceUsingOverlayFS
 import com.xmy.ap.util.setGlobalNamespaceEnabled
-import com.xmy.ap.util.setLiteMode
 import com.xmy.ap.util.ui.APDialogBlurBehindUtils
 import com.xmy.ap.util.ui.LocalSnackbarHost
 import com.xmy.ap.util.ui.NavigationBarsSpacer
@@ -122,22 +112,8 @@ fun SettingScreen() {
     var isGlobalNamespaceEnabled by rememberSaveable {
         mutableStateOf(false)
     }
-    var isLiteModeEnabled by rememberSaveable {
-        mutableStateOf(false)
-    }
-    var forceUsingOverlayFS by rememberSaveable {
-        mutableStateOf(false)
-    }
-    var bSkipStoreSuperKey by rememberSaveable {
-        mutableStateOf(APatchKeyHelper.shouldSkipStoreSuperKey())
-    }
-    val isOverlayFSAvailable by rememberSaveable {
-        mutableStateOf(overlayFsAvailable())
-    }
     if (kPatchReady && aPatchReady) {
         isGlobalNamespaceEnabled = isGlobalNamespaceEnabled()
-        isLiteModeEnabled = isLiteModeEnabled()
-        forceUsingOverlayFS = isForceUsingOverlayFS()
     }
 
     val snackBarHost = LocalSnackbarHost.current
@@ -152,12 +128,6 @@ fun SettingScreen() {
     ) { paddingValues ->
 
         val loadingDialog = rememberLoadingDialog()
-        val clearKeyDialog = rememberConfirmDialog(
-            onConfirm = {
-                APatchKeyHelper.clearConfigKey()
-                APApplication.superKey = ""
-            }
-        )
 
         val showLanguageDialog = rememberSaveable { mutableStateOf(false) }
         LanguageDialog(showLanguageDialog)
@@ -173,6 +143,7 @@ fun SettingScreen() {
         }
 
         var showLogBottomSheet by remember { mutableStateOf(false) }
+        val saveLog = stringResource(R.string.save_log)
 
         val scope = rememberCoroutineScope()
         val context = LocalContext.current
@@ -205,39 +176,6 @@ fun SettingScreen() {
             val scope = rememberCoroutineScope()
             val prefs = APApplication.sharedPreferences
 
-            // clear key
-            if (kPatchReady) {
-                val clearKeyDialogTitle = stringResource(id = R.string.clear_super_key)
-                val clearKeyDialogContent =
-                    stringResource(id = R.string.settings_clear_super_key_dialog)
-                ListItem(
-                    leadingContent = {
-                        Icon(
-                            Icons.Filled.Key, stringResource(id = R.string.super_key)
-                        )
-                    },
-                    headlineContent = { Text(stringResource(id = R.string.clear_super_key)) },
-                    modifier = Modifier.clickable {
-                        clearKeyDialog.showConfirm(
-                            title = clearKeyDialogTitle,
-                            content = clearKeyDialogContent,
-                            markdown = false,
-                        )
-
-                    })
-            }
-
-            // store key local?
-            SwitchItem(
-                icon = Icons.Filled.Key,
-                title = stringResource(id = R.string.settings_donot_store_superkey),
-                summary = stringResource(id = R.string.settings_donot_store_superkey_summary),
-                checked = bSkipStoreSuperKey,
-                onCheckedChange = {
-                    bSkipStoreSuperKey = it
-                    APatchKeyHelper.setShouldSkipStoreSuperKey(bSkipStoreSuperKey)
-                })
-
             // Global mount
             if (kPatchReady && aPatchReady) {
                 SwitchItem(
@@ -254,32 +192,6 @@ fun SettingScreen() {
                             }
                         )
                         isGlobalNamespaceEnabled = it
-                    })
-            }
-
-            // Lite Mode
-            if (kPatchReady && aPatchReady) {
-                SwitchItem(
-                    icon = Icons.Filled.RemoveFromQueue,
-                    title = stringResource(id = R.string.settings_lite_mode),
-                    summary = stringResource(id = R.string.settings_lite_mode_mode_summary),
-                    checked = isLiteModeEnabled,
-                    onCheckedChange = {
-                        setLiteMode(it)
-                        isLiteModeEnabled = it
-                    })
-            }
-
-            // Force OverlayFS
-            if (kPatchReady && aPatchReady && isOverlayFSAvailable) {
-                SwitchItem(
-                    icon = Icons.Filled.FilePresent,
-                    title = stringResource(id = R.string.settings_force_overlayfs_mode),
-                    summary = stringResource(id = R.string.settings_force_overlayfs_mode_summary),
-                    checked = forceUsingOverlayFS,
-                    onCheckedChange = {
-                        setForceUsingOverlayFS(it)
-                        forceUsingOverlayFS = it
                     })
             }
 
@@ -516,7 +428,7 @@ fun SettingScreen() {
                                                 context.startActivity(
                                                     Intent.createChooser(
                                                         shareIntent,
-                                                        context.getString(R.string.send_log)
+                                                        saveLog
                                                     )
                                                 )
                                                 showLogBottomSheet = false
@@ -749,4 +661,3 @@ fun LanguageDialog(showLanguageDialog: MutableState<Boolean>) {
         }
     }
 }
-

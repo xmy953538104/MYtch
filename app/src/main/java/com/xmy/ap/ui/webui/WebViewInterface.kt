@@ -16,6 +16,7 @@ import androidx.core.view.WindowInsetsControllerCompat
 import com.topjohnwu.superuser.CallbackList
 import com.topjohnwu.superuser.ShellUtils
 import com.topjohnwu.superuser.internal.UiThreadHandler
+import com.xmy.ap.ui.WebUIActivity
 import com.xmy.ap.ui.viewmodel.SuperUserViewModel
 import com.xmy.ap.util.createRootShell
 import org.json.JSONArray
@@ -162,6 +163,14 @@ class WebViewInterface(val context: Context, private val webView: WebView) {
                     showSystemUI(context.window)
                 }
             }
+        }
+        enableInsets(enable)
+    }
+
+    @JavascriptInterface
+    fun enableInsets(enable: Boolean = true) {
+        if (context is WebUIActivity) {
+            context.enableInsets(enable)
         }
     }
 

@@ -14,7 +14,6 @@ import androidx.lifecycle.MutableLiveData
 import com.topjohnwu.superuser.CallbackList
 import com.xmy.ap.ui.CrashHandleActivity
 import com.xmy.ap.util.APatchCli
-import com.xmy.ap.util.APatchKeyHelper
 import com.xmy.ap.util.Version
 import com.xmy.ap.util.getRootShell
 import com.xmy.ap.util.rootShellForResult
@@ -61,8 +60,6 @@ class APApplication : Application(), Thread.UncaughtExceptionHandler {
         const val SAFEMODE_FILE = "/dev/.safemode"
         private const val NEED_REBOOT_FILE = "/dev/.need_reboot"
         const val GLOBAL_NAMESPACE_FILE = "/data/adb/.global_namespace_enable"
-        const val LITE_MODE_FILE = "/data/adb/.litemode_enable"
-        const val FORCE_OVERLAYFS_FILE = "/data/adb/.overlayfs_enable"
         const val KPMS_DIR = APATCH_FOLDER + "kpms/"
 
         @Deprecated("Use 'apd -V'")
@@ -70,7 +67,7 @@ class APApplication : Application(), Thread.UncaughtExceptionHandler {
         private const val MAGISKPOLICY_BIN_PATH = APATCH_BIN_FOLDER + "magiskpolicy"
         private const val BUSYBOX_BIN_PATH = APATCH_BIN_FOLDER + "busybox"
         private const val RESETPROP_BIN_PATH = APATCH_BIN_FOLDER + "resetprop"
-        private const val MAGISKBOOT_BIN_PATH = APATCH_BIN_FOLDER + "magiskboot"
+        private const val KPTOOLS_BIN_PATH = APATCH_BIN_FOLDER + "kptools"
         const val DEFAULT_SCONTEXT = "u:r:untrusted_app:s0"
         const val MAGISK_SCONTEXT = "u:r:magisk:s0"
 
@@ -139,14 +136,16 @@ class APApplication : Application(), Thread.UncaughtExceptionHandler {
                 "ln -s $APD_PATH $APD_LINK_PATH",
                 "restorecon $APD_PATH",
 
-                "cp -f ${nativeDir}/libmagiskpolicy.so $MAGISKPOLICY_BIN_PATH",
-                "chmod +x $MAGISKPOLICY_BIN_PATH",
-                "cp -f ${nativeDir}/libresetprop.so $RESETPROP_BIN_PATH",
-                "chmod +x $RESETPROP_BIN_PATH",
+                "rm -f $MAGISKPOLICY_BIN_PATH",
+                "ln -s $APD_PATH $MAGISKPOLICY_BIN_PATH",
+                "rm -f $RESETPROP_BIN_PATH",
+                "ln -s $APD_PATH $RESETPROP_BIN_PATH",
+               
                 "cp -f ${nativeDir}/libbusybox.so $BUSYBOX_BIN_PATH",
                 "chmod +x $BUSYBOX_BIN_PATH",
-                "cp -f ${nativeDir}/libmagiskboot.so $MAGISKBOOT_BIN_PATH",
-                "chmod +x $MAGISKBOOT_BIN_PATH",
+                "cp -f ${nativeDir}/libkptools.so $KPTOOLS_BIN_PATH",
+                "chmod +x $KPTOOLS_BIN_PATH",
+
 
 
                 "touch $PACKAGE_CONFIG_FILE",
@@ -185,8 +184,6 @@ class APApplication : Application(), Thread.UncaughtExceptionHandler {
                     if (ready) State.ANDROIDPATCH_NOT_INSTALLED else State.UNKNOWN_STATE
                 Log.d(TAG, "state: " + _kpStateLiveData.value)
                 if (!ready) return
-
-                APatchKeyHelper.writeSPSuperKey(value)
 
                 thread {
                     val rc = Natives.su(0, null)
@@ -256,7 +253,7 @@ class APApplication : Application(), Thread.UncaughtExceptionHandler {
             exitProcess(0)
         }
 
-        if (!BuildConfig.DEBUG && !verifyAppSignature("P+zzpyyg4PJJkdSecwbvSnEXEfSKZgcHVesCN+yz7ZQ=")) {
+        if (!BuildConfig.DEBUG && !verifyAppSignature("1x2twMoHvfWUODv7KkRRNKBzOfEqJwRKGzJpgaz18xk=")) {
             while (true) {
                 val intent = Intent(Intent.ACTION_DELETE)
                 intent.data = "package:$packageName".toUri()
@@ -271,8 +268,7 @@ class APApplication : Application(), Thread.UncaughtExceptionHandler {
         // TODO: 1. make me root by kernel
         // TODO: 2. remove all usage of superkey
         sharedPreferences = getSharedPreferences(SP_NAME, Context.MODE_PRIVATE)
-        APatchKeyHelper.setSharedPreferences(sharedPreferences)
-        superKey = APatchKeyHelper.readSPSuperKey()
+        superKey = "su"
 
         okhttpClient =
             OkHttpClient.Builder().cache(Cache(File(cacheDir, "okhttp"), 10 * 1024 * 1024))
@@ -306,4 +302,3 @@ class APApplication : Application(), Thread.UncaughtExceptionHandler {
         exitProcess(10)
     }
 }
-

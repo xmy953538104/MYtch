@@ -1,16 +1,15 @@
-use crate::package::{read_ap_package_config, synchronize_package_uid};
-use errno::errno;
-use libc::{EINVAL, c_int, c_long, c_void, execv, fork, pid_t, setenv, syscall, uid_t, wait};
+use std::{
+    ffi::{CStr, CString},
+    fs::File,
+    io::{self, Read},
+    process,
+    sync::{Arc, Mutex},
+};
+
+use libc::{EINVAL, c_long, c_void, syscall, uid_t};
 use log::{error, info, warn};
-use std::ffi::{CStr, CString};
-use std::fmt::Write;
-use std::fs::File;
-use std::io::{self, Read};
 
-use std::process::exit;
-use std::sync::{Arc, Mutex};
-
-use std::{process, ptr};
+use crate::package::{read_ap_package_config, synchronize_package_uid};
 
 const MAJOR: c_long = 0;
 const MINOR: c_long = 11;
@@ -19,9 +18,6 @@ const PATCH: c_long = 1;
 const KSTORAGE_EXCLUDE_LIST_GROUP: i32 = 1;
 
 const __NR_SUPERCALL: c_long = 45;
-const SUPERCALL_KLOG: c_long = 0x1004;
-const SUPERCALL_KERNELPATCH_VER: c_long = 0x1008;
-const SUPERCALL_KERNEL_VER: c_long = 0x1009;
 const SUPERCALL_SU: c_long = 0x1010;
 const SUPERCALL_KSTORAGE_WRITE: c_long = 0x1041;
 const SUPERCALL_SU_GRANT_UID: c_long = 0x1100;
@@ -157,48 +153,6 @@ fn sc_su_reset_path(key: &CStr, path: &CStr) -> c_long {
     }
 }
 
-fn sc_kp_ver(key: &CStr) -> Result<u32, i32> {
-    if key.to_bytes().is_empty() {
-        return Err(-EINVAL);
-    }
-    let ret = unsafe {
-        syscall(
-            __NR_SUPERCALL,
-            key.as_ptr(),
-            ver_and_cmd(SUPERCALL_KERNELPATCH_VER),
-        )
-    };
-    Ok(ret as u32)
-}
-
-fn sc_k_ver(key: &CStr) -> Result<u32, i32> {
-    if key.to_bytes().is_empty() {
-        return Err(-EINVAL);
-    }
-    let ret = unsafe {
-        syscall(
-            __NR_SUPERCALL,
-            key.as_ptr(),
-            ver_and_cmd(SUPERCALL_KERNEL_VER),
-        )
-    };
-    Ok(ret as u32)
-}
-
-fn sc_klog(key: &CStr, msg: &CStr) -> c_long {
-    if key.to_bytes().is_empty() || msg.to_bytes().is_empty() {
-        return (-EINVAL).into();
-    }
-    unsafe {
-        syscall(
-            __NR_SUPERCALL,
-            key.as_ptr(),
-            ver_and_cmd(SUPERCALL_KLOG),
-            msg.as_ptr(),
-        ) as c_long
-    }
-}
-
 fn sc_su_uid_nums(key: &CStr) -> c_long {
     if key.to_bytes().is_empty() {
         return (-EINVAL).into();
@@ -319,41 +273,6 @@ pub fn privilege_apd_profile(superkey: &Option<String>) {
     }
 }
 
-pub fn init_load_package_uid_config(superkey: &Option<String>) {
-    let package_configs = read_ap_package_config();
-    let key = convert_superkey(superkey);
-
-    for config in package_configs {
-        if config.allow == 1 && config.exclude == 0 {
-            match key {
-                Some(ref key) => {
-                    let profile = SuProfile {
-                        uid: config.uid,
-                        to_uid: config.to_uid,
-                        scontext: convert_string_to_u8_array(&config.sctx),
-                    };
-                    let result = sc_su_grant_uid(key, &profile);
-                    info!("Processed {}: result = {}", config.pkg, result);
-                }
-                _ => {
-                    warn!("Superkey is None, skipping config: {}", config.pkg);
-                }
-            }
-        }
-        if config.allow == 0 && config.exclude == 1 {
-            match key {
-                Some(ref key) => {
-                    let result = sc_set_ap_mod_exclude(key, config.uid as i64, 1);
-                    info!("Processed exclude {}: result = {}", config.pkg, result);
-                }
-                _ => {
-                    warn!("Superkey is None, skipping config: {}", config.pkg);
-                }
-            }
-        }
-    }
-}
-
 pub fn init_load_su_path(superkey: &Option<String>) {
     let su_path_file = "/data/adb/ap/su_path";
 
@@ -382,95 +301,6 @@ pub fn init_load_su_path(superkey: &Option<String>) {
         }
         Err(e) => {
             warn!("Failed to read su_path file: {}", e);
-        }
-    }
-}
-
-fn set_env_var(key: &str, value: &str) {
-    let key_c = CString::new(key).expect("CString::new failed");
-    let value_c = CString::new(value).expect("CString::new failed");
-    unsafe {
-        setenv(key_c.as_ptr(), value_c.as_ptr(), 1);
-    }
-}
-
-fn log_kernel(key: &CStr, _fmt: &str, args: std::fmt::Arguments) -> c_long {
-    let mut buf = String::with_capacity(1024);
-    write!(&mut buf, "{}", args).expect("Error formatting string");
-
-    let c_buf = CString::new(buf).expect("CString::new failed");
-    sc_klog(key, &c_buf)
-}
-
-#[macro_export]
-macro_rules! log_kernel {
-    ($key:expr_2021, $fmt:expr_2021, $($arg:tt)*) => (
-        log_kernel($key, $fmt, std::format_args!($fmt, $($arg)*))
-    )
-}
-
-pub fn fork_for_result(exec: &str, argv: &[&str], key: &Option<String>) {
-    let mut cmd = String::new();
-    for arg in argv {
-        cmd.push_str(arg);
-        cmd.push(' ');
-    }
-
-    let superkey_cstr = convert_superkey(key);
-
-    match superkey_cstr {
-        Some(superkey_cstr) => {
-            unsafe {
-                let pid: pid_t = fork();
-                if pid < 0 {
-                    log_kernel!(
-                        &superkey_cstr,
-                        "{} fork {} error: {}\n",
-                        libc::getpid(),
-                        exec,
-                        -1
-                    );
-                } else if pid == 0 {
-                    set_env_var("KERNELPATCH", "true");
-                    let kpver = format!("{:x}", sc_kp_ver(&superkey_cstr).unwrap_or(0));
-                    set_env_var("KERNELPATCH_VERSION", kpver.as_str());
-                    let kver = format!("{:x}", sc_k_ver(&superkey_cstr).unwrap_or(0));
-                    set_env_var("KERNEL_VERSION", kver.as_str());
-
-                    let c_exec = CString::new(exec).expect("CString::new failed");
-                    let c_argv: Vec<CString> =
-                        argv.iter().map(|&arg| CString::new(arg).unwrap()).collect();
-                    let mut c_argv_ptrs: Vec<*const libc::c_char> =
-                        c_argv.iter().map(|arg| arg.as_ptr()).collect();
-                    c_argv_ptrs.push(ptr::null());
-
-                    execv(c_exec.as_ptr(), c_argv_ptrs.as_ptr());
-
-                    log_kernel!(
-                        &superkey_cstr,
-                        "{} exec {} error: {}\n",
-                        libc::getpid(),
-                        cmd,
-                        CStr::from_ptr(libc::strerror(errno().0))
-                            .to_string_lossy()
-                            .into_owned()
-                    );
-                    exit(1); // execv only returns on error
-                } else {
-                    let mut status: c_int = 0;
-                    wait(&mut status);
-                    log_kernel!(
-                        &superkey_cstr,
-                        "{} wait {} status: 0x{}\n",
-                        libc::getpid(),
-                        cmd,
-                        status
-                    );
-                }
-            }
-        }
-        _ => {
-            warn!("[fork_for_result] SuperKey convert failed!");
         }
     }
 }

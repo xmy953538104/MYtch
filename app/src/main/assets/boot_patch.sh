@@ -15,7 +15,6 @@
 # bootimg            binary        The target boot image
 # kpimg              binary        KernelPatch core Image
 # kptools            executable    The KernelPatch tools binary to inject kpimg to kernel Image
-# magiskboot         executable    Magisk tool to unpack boot.img.
 #
 #######################################################################################
 
@@ -37,14 +36,18 @@ shift 2
 [ -e "$BOOTIMAGE" ] || { >&2 echo "- $BOOTIMAGE does not exist!"; exit 1; }
 
 # Check for dependencies
-command -v ./magiskboot >/dev/null 2>&1 || { >&2 echo "- Command magiskboot not found!"; exit 1; }
+
 command -v ./kptools >/dev/null 2>&1 || { >&2 echo "- Command kptools not found!"; exit 1; }
 
 if [ ! -f kernel ]; then
 echo "- Unpacking boot image"
-./magiskboot unpack "$BOOTIMAGE" >/dev/null 2>&1
-  if [ $? -ne 0 ]; then
-    >&2 echo "- Unpack error: $?"
+
+set -x
+./kptools unpack "$BOOTIMAGE" "$@"
+patch_rc=$?
+set +x
+  if [ $patch_rc -ne 0 ]; then
+    >&2 echo "- Unpack error: $patch_rc"
     exit $?
   fi
 fi
@@ -65,8 +68,11 @@ mv kernel kernel.ori
 
 echo "- Patching kernel"
 
+KPT_ARGS=""
+[ "$SUPERKEY" != "su" ] && KPT_ARGS="-S $SUPERKEY"
+
 set -x
-./kptools -p -i kernel.ori -S "$SUPERKEY" -k kpimg -o kernel "$@"
+./kptools -p -i kernel.ori $KPT_ARGS -k kpimg -o kernel "$@"
 patch_rc=$?
 set +x
 
@@ -76,7 +82,7 @@ if [ $patch_rc -ne 0 ]; then
 fi
 
 echo "- Repacking boot image"
-./magiskboot repack "$BOOTIMAGE" >/dev/null 2>&1
+./kptools repack "$BOOTIMAGE"
 
 if [ ! $(./kptools -i kernel.ori -f | grep CONFIG_KALLSYMS_ALL=y) ]; then
 	echo "- Detected CONFIG_KALLSYMS_ALL is not set!"

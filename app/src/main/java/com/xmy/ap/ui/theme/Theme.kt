@@ -20,6 +20,7 @@ import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.MutableLiveData
 import com.xmy.ap.APApplication
+import com.xmy.ap.ui.webui.MonetColorsProvider
 
 @Composable
 private fun SystemBarStyle(
@@ -167,7 +168,11 @@ fun APatchTheme(
     )
 
     MaterialTheme(
-        colorScheme = colorScheme, typography = Typography, content = content
+        colorScheme = colorScheme,
+        typography = Typography,
+        content = {
+            MonetColorsProvider.UpdateCss()
+            content()
+        }
     )
 }
-

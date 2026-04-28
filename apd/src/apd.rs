@@ -1,12 +1,11 @@
-use anyhow::{Ok, Result};
-
-#[cfg(unix)]
-use getopts::Options;
-use std::env;
 #[cfg(unix)]
 use std::os::unix::process::CommandExt;
-use std::path::PathBuf;
-use std::{ffi::CStr, process::Command};
+use std::{env, ffi::CStr, path::PathBuf, process::Command};
+
+use anyhow::{Ok, Result};
+#[cfg(unix)]
+use getopts::Options;
+use rustix::thread::{Gid, Uid, set_thread_res_gid, set_thread_res_uid};
 
 #[cfg(any(target_os = "linux", target_os = "android"))]
 use crate::pty::prepare_pty;
@@ -14,7 +13,6 @@ use crate::{
     defs,
     utils::{self, umask},
 };
-use rustix::thread::{Gid, Uid, set_thread_res_gid, set_thread_res_uid};
 
 fn print_usage(opts: Options) {
     let brief = "APatch\n\nUsage: <command> [options] [-] [user [argument...]]".to_string();
@@ -23,8 +21,8 @@ fn print_usage(opts: Options) {
 
 fn set_identity(uid: u32, gid: u32) {
     #[cfg(any(target_os = "linux", target_os = "android"))]
-    let gid = unsafe { Gid::from_raw(gid) };
-    let uid = unsafe { Uid::from_raw(uid) };
+    let gid = Gid::from_raw(gid);
+    let uid = Uid::from_raw(uid);
     set_thread_res_gid(gid, gid, gid).ok();
     set_thread_res_uid(uid, uid, uid).ok();
 }
@@ -173,9 +171,9 @@ pub fn root_shell() -> Result<()> {
             let pw_name = pw_name.to_string_lossy();
 
             command = command
-                .env("HOME", home.as_ref())
-                .env("USER", pw_name.as_ref())
-                .env("LOGNAME", pw_name.as_ref())
+                .env("HOME", home.as_ref() as &str)
+                .env("USER", pw_name.as_ref() as &str)
+                .env("LOGNAME", pw_name.as_ref() as &str)
                 .env("SHELL", &shell);
         }
     }
