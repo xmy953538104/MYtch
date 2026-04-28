@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="patch_warnning">Při instalaci může dojít k problémům. Ujistěte se prosím, že vaše data jsou zálohována.</string>
     <string name="reboot_bootloader">Restartovat do: Zavaděč</string>

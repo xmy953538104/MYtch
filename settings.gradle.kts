@@ -1,4 +1,4 @@
-@file:Suppress("UnstableApiUsage")
+﻿@file:Suppress("UnstableApiUsage")
 
 pluginManagement {
     repositories {
@@ -21,5 +21,5 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "APatch"
+rootProject.name = "Mync"
 include(":app")

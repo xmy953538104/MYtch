@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="apm_reboot_to_apply">Riavvia per rendere effettive le modifiche</string>
     <string name="android_patch">Patch di Android</string>
@@ -85,7 +85,7 @@
     <string name="home_su_path">Eseguibile su</string>
     <string name="apm">APModule</string>
     <string name="super_key">Superchiave</string>
-    <string name="app_name" translatable="false">APatch</string>
+    <string name="app_name" translatable="false">Mync</string>
     <string name="kpm">KPModule</string>
     <string name="clear_super_key">Elimina Superchiave</string>
     <string name="apm_not_installed">AndroidPatch non installato</string>

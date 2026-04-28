@@ -1,4 +1,4 @@
-@file:Suppress("UnstableApiUsage")
+﻿@file:Suppress("UnstableApiUsage")
 
 import com.android.build.gradle.tasks.PackageAndroidArtifact
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
@@ -120,7 +120,7 @@ android {
             }
         }
         buildConfigField("String", "buildKPV", "\"$kernelPatchVersion\"")
-        base.archivesName = "APatch_${managerVersionCode}_${managerVersionName}_${branchName}"
+        base.archivesName = "Mync_${managerVersionCode}_${managerVersionName}_${branchName}"
     }
 
     compileOptions {

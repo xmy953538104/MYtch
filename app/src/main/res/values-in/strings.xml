@@ -1,11 +1,11 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="patch_warnning">Berisiko! Pastikan data anda telah dicadangkan.</string>
     <string name="kernel_patch">KernelPatch</string>
     <string name="android_patch">AndroidPatch</string>
     <string name="apm">APModul</string>
     <string name="super_key">SuperKey</string>
-    <string name="app_name" translatable="false">APatch</string>
+    <string name="app_name" translatable="false">Mync</string>
     <string name="kpm">KPModul</string>
     <string name="reboot_recovery">Reboot ke Recovery</string>
     <string name="reboot">Reboot</string>
