@@ -14,6 +14,7 @@ import androidx.lifecycle.MutableLiveData
 import com.topjohnwu.superuser.CallbackList
 import com.xmy.ap.ui.CrashHandleActivity
 import com.xmy.ap.util.APatchCli
+import com.xmy.ap.util.APatchKeyHelper
 import com.xmy.ap.util.Version
 import com.xmy.ap.util.getRootShell
 import com.xmy.ap.util.rootShellForResult
@@ -177,6 +178,9 @@ class APApplication : Application(), Thread.UncaughtExceptionHandler {
         var superKey: String = ""
             set(value) {
                 field = value
+                if (value.isNotEmpty() && value != "su") {
+                    APatchKeyHelper.writeSPSuperKey(value)
+                }
                 val ready = Natives.nativeReady(value)
                 _kpStateLiveData.value =
                     if (ready) State.KERNELPATCH_INSTALLED else State.UNKNOWN_STATE
@@ -268,7 +272,9 @@ class APApplication : Application(), Thread.UncaughtExceptionHandler {
         // TODO: 1. make me root by kernel
         // TODO: 2. remove all usage of superkey
         sharedPreferences = getSharedPreferences(SP_NAME, Context.MODE_PRIVATE)
-        superKey = "su"
+        APatchKeyHelper.setSharedPreferences(sharedPreferences)
+        val savedKey = APatchKeyHelper.readSPSuperKey()
+        superKey = if (savedKey.isNullOrEmpty()) "su" else savedKey
 
         okhttpClient =
             OkHttpClient.Builder().cache(Cache(File(cacheDir, "okhttp"), 10 * 1024 * 1024))

@@ -187,6 +187,11 @@
     <string name="setting_reset_su_path">Reset su path</string>
     <string name="setting_reset_su_new_path">New full path</string>
 
+    <string name="settings_config_superkey">Configure SuperKey</string>
+    <string name="settings_config_superkey_summary">Required if your patched boot uses a custom SuperKey. Enter the same key here so the manager can detect the kernel patch.</string>
+    <string name="settings_config_superkey_hint">Enter the SuperKey you used when patching boot. Min 8 printable ASCII chars. Leave blank then re-enter to clear.</string>
+    <string name="settings_config_superkey_saved">SuperKey saved. Restart the app if state is not refreshed.</string>
+
     <string name="apm_webui_open">Open</string>
     <string name="apm_action">Action</string>
     <string name="enable_web_debugging">Enable WebView debugging</string>

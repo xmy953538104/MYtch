@@ -153,6 +153,10 @@
     <string name="kpm_install">安装</string>
     <string name="setting_reset_su_path">重设 SU 路径</string>
     <string name="setting_reset_su_new_path">新的完整路径</string>
+    <string name="settings_config_superkey">配置 SuperKey</string>
+    <string name="settings_config_superkey_summary">如果你的 boot 是用自定义 SuperKey 修补的，请在此输入相同的密钥，否则管理器无法识别内核补丁。</string>
+    <string name="settings_config_superkey_hint">输入修补 boot 时使用的 SuperKey，至少 8 位可见 ASCII 字符。留空清除。</string>
+    <string name="settings_config_superkey_saved">SuperKey 已保存，状态未刷新请重启 App。</string>
     <string name="success">成功</string>
     <string name="failure">失败</string>
     <string name="mode_select_page_title">安装</string>
