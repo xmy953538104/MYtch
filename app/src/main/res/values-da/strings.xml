@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="home">Hjem</string>
     <string name="failure">Fejl</string>
@@ -18,8 +18,7 @@
     <string name="send_log">Send logs</string>
     <string name="log_saved">Log gemt</string>
     <string name="home_need_update">Ny version tilgængelig</string>
-    <string name="settings_clear_super_key_dialog">Vil du virkelig fortsætte?</string>
-    <string name="home_not_installed">Ikke installeret</string>
+<string name="home_not_installed">Ikke installeret</string>
     <string name="home_ap_cando_reboot">Genstart</string>
     <string name="settings">Indstillinger</string>
     <string name="reboot">Genstart</string>

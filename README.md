@@ -1,7 +1,7 @@
 <div align="center">
 <a href="https://github.com/bmax121/APatch/releases/latest"><img src="https://images.weserv.nl/?url=https://raw.githubusercontent.com/bmax121/APatch/main/app/src/main/ic_launcher-playstore.png&mask=circle" style="width: 128px;" alt="logo"></a>
 
-<h1 align="center">APatch</h1>
+<h1 align="center">Myboot</h1>
 
 [![Latest Release](https://img.shields.io/github/v/release/bmax121/APatch?label=Release&logo=github)](https://github.com/bmax121/APatch/releases/latest)
 [![Nightly Release](https://img.shields.io/badge/Nightly%20release-gray?logo=hackthebox&logoColor=fff)](https://nightly.link/bmax121/APatch/workflows/build/main/APatch)
@@ -11,13 +11,12 @@
 
 </div>
 
-The patching of Android kernel and Android system.
+KernelPatch-based root manager for Android.
 
 - A new kernel-based root solution for Android devices.
-- APM: Support for modules similar to Magisk.
-- KPM: Support for modules that allow you to inject any code into the kernel (Provides kernel function `inline-hook` and `syscall-table-hook`).
+- KPM: Support for KernelPatch modules.
 - APatch relies on [KernelPatch](https://github.com/bmax121/KernelPatch/).
-- The APatch UI and the APModule source code have been derived and modified from [KernelSU](https://github.com/tiann/KernelSU).
+- The Myboot UI has been derived and modified from [KernelSU](https://github.com/tiann/KernelSU).
 
 [<img src="https://fdroid.gitlab.io/artwork/badge/get-it-on.png"
      alt="Get it on F-Droid"
@@ -39,12 +38,6 @@ Kernel configs:
 - `CONFIG_KALLSYMS=y` and `CONFIG_KALLSYMS_ALL=y`
 
 - `CONFIG_KALLSYMS=y` and `CONFIG_KALLSYMS_ALL=n`: Initial support
-
-## Security Alert
-
-The **SuperKey** has higher privileges than root access.  
-Weak or compromised keys can lead to unauthorized control of your device.  
-It is critical to use robust keys and safeguard them from exposure to maintain the security of your device.
 
 ## Translation
 
@@ -81,7 +74,7 @@ Furthermore, we need more volunteers to [contribute to the documentation](https:
 
 - [KernelPatch](https://github.com/bmax121/KernelPatch/): The core.
 - [Magisk](https://github.com/topjohnwu/Magisk): magiskpolicy.
-- [KernelSU](https://github.com/tiann/KernelSU): App UI, and Magisk module like support.
+- [KernelSU](https://github.com/tiann/KernelSU): App UI inspiration.
 
 ## License
 

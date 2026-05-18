@@ -5,26 +5,21 @@ import android.content.Context
 import android.content.pm.PackageManager
 import android.content.pm.Signature
 import android.database.Cursor
-import android.net.Uri
 import android.os.Build
 import android.provider.OpenableColumns
 import android.util.Base64
 import android.util.Log
-import com.topjohnwu.superuser.CallbackList
 import com.topjohnwu.superuser.Shell
 import com.topjohnwu.superuser.ShellUtils
 import com.topjohnwu.superuser.internal.MainShell
-import com.topjohnwu.superuser.io.SuFile
 import com.xmy.ap.APApplication
 import com.xmy.ap.APApplication.Companion.SUPERCMD
 import com.xmy.ap.BuildConfig
 import com.xmy.ap.apApp
-import com.xmy.ap.ui.screen.MODULE_TYPE
 import java.io.File
 import java.security.MessageDigest
 import java.security.cert.CertificateFactory
 import java.security.cert.X509Certificate
-import java.util.Properties
 import java.util.zip.ZipFile
 
 private const val TAG = "APatchCli"
@@ -45,7 +40,7 @@ fun createRootShell(globalMnt: Boolean = false): Shell {
     val builder = Shell.Builder.create().setInitializers(RootShellInitializer::class.java)
     return try {
         builder.build(
-            SUPERCMD, APApplication.superKey, "-Z", APApplication.MAGISK_SCONTEXT
+            SUPERCMD, APApplication.ROOT_KEY, "-Z", APApplication.MAGISK_SCONTEXT
         )
     } catch (e: Throwable) {
         Log.e(TAG, "su failed: ", e)
@@ -53,11 +48,11 @@ fun createRootShell(globalMnt: Boolean = false): Shell {
             Log.e(TAG, "retry compat kpatch su")
             if (globalMnt) {
                 builder.build(
-                    getKPatchPath(), APApplication.superKey, "su", "-Z", APApplication.MAGISK_SCONTEXT, "--mount-master"
+                    getKPatchPath(), APApplication.ROOT_KEY, "su", "-Z", APApplication.MAGISK_SCONTEXT, "--mount-master"
                 )
             }else{
                 builder.build(
-                    getKPatchPath(), APApplication.superKey, "su", "-Z", APApplication.MAGISK_SCONTEXT
+                    getKPatchPath(), APApplication.ROOT_KEY, "su", "-Z", APApplication.MAGISK_SCONTEXT
                 )
             }
         } catch (e: Throwable) {
@@ -81,10 +76,10 @@ private fun createMainRootShell() : Shell {
     val builder = Shell.Builder.create()
         .setInitializers(RootShellInitializer::class.java)
     val shell = try {
-        builder.build(SUPERCMD, APApplication.superKey, "-Z", APApplication.MAGISK_SCONTEXT)
+        builder.build(SUPERCMD, APApplication.ROOT_KEY, "-Z", APApplication.MAGISK_SCONTEXT)
     } catch (e: Throwable) {
         Log.e(TAG, "su failed: ", e)
-        builder.setCommands(getKPatchPath(), APApplication.superKey, "su", "-Z", APApplication.MAGISK_SCONTEXT)
+        builder.setCommands(getKPatchPath(), APApplication.ROOT_KEY, "su", "-Z", APApplication.MAGISK_SCONTEXT)
         try {
             builder.build()
         } catch (e: Throwable) {
@@ -106,9 +101,18 @@ private fun createMainRootShell() : Shell {
 
 object APatchCli {
     var SHELL: Shell = createMainRootShell()
-    val GLOBAL_MNT_SHELL: Shell = createRootShell(true)
+    private var globalMntShell: Shell? = null
+
+    fun getGlobalMntShell(): Shell {
+        return globalMntShell ?: createRootShell(true).also {
+            globalMntShell = it
+        }
+    }
+
     fun refresh() {
         val tmp = SHELL
+        val tmpGlobal = globalMntShell
+        globalMntShell = null
 
         val clazz = MainShell::class.java // reset MainShell
         clazz.getDeclaredField("isInitMain").apply {
@@ -133,21 +137,15 @@ object APatchCli {
 
         SHELL = createMainRootShell()
         tmp.close()
+        tmpGlobal?.close()
     }
 }
 
 fun getRootShell(globalMnt: Boolean = false): Shell {
 
-    return if (globalMnt) APatchCli.GLOBAL_MNT_SHELL else {
+    return if (globalMnt) APatchCli.getGlobalMntShell() else {
         APatchCli.SHELL
     }
-}
-
-inline fun <T> withNewRootShell(
-    globalMnt: Boolean = false,
-    block: Shell.() -> T
-): T {
-    return createRootShell(globalMnt).use(block)
 }
 
 fun rootAvailable(): Boolean {
@@ -160,14 +158,14 @@ fun tryGetRootShell(): Shell {
     val builder = Shell.Builder.create()
     return try {
         builder.build(
-            SUPERCMD, APApplication.superKey, "-Z", APApplication.MAGISK_SCONTEXT
+            SUPERCMD, APApplication.ROOT_KEY, "-Z", APApplication.MAGISK_SCONTEXT
         )
     } catch (e: Throwable) {
         Log.e(TAG, "su failed: ", e)
         return try {
             Log.e(TAG, "retry compat kpatch su")
             builder.build(
-                getKPatchPath(), APApplication.superKey, "su", "-Z", APApplication.MAGISK_SCONTEXT
+                getKPatchPath(), APApplication.ROOT_KEY, "su", "-Z", APApplication.MAGISK_SCONTEXT
             )
         } catch (e: Throwable) {
             Log.e(TAG, "retry kpatch su failed: ", e)
@@ -194,142 +192,6 @@ fun rootShellForResult(vararg cmds: String): Shell.Result {
     return getRootShell().newJob().add(*cmds).to(out, err).exec()
 }
 
-fun execApd(args: String, newShell: Boolean = false): Boolean {
-    return if (newShell) {
-        withNewRootShell {
-            ShellUtils.fastCmdResult(this, "${APApplication.APD_PATH} $args")
-        }
-    } else {
-        ShellUtils.fastCmdResult(getRootShell(), "${APApplication.APD_PATH} $args")
-    }
-}
-
-fun listModules(): String {
-    val shell = getRootShell()
-    val out =
-        shell.newJob().add("${APApplication.APD_PATH} module list").to(ArrayList(), null).exec().out
-    withNewRootShell{
-       newJob().add("cp /data/user/*/com.xmy.ap/patch/ori.img /data/adb/ap/ && rm /data/user/*/com.xmy.ap/patch/ori.img")
-       .to(ArrayList(),null).exec()
-   }
-    return out.joinToString("\n").ifBlank { "[]" }
-}
-
-fun hasMetaModule(): Boolean {
-    return getMetaModuleImplement() != "None"
-}
-
-fun getMetaModuleImplement(): String {
-    try {
-        val metaModuleProp = SuFile.open("/data/adb/metamodule/module.prop")
-        if (!metaModuleProp.isFile) {
-            Log.i(TAG, "Meta module implement: None")
-            return "None"
-        }
-
-        val prop = Properties()
-        prop.load(metaModuleProp.newInputStream())
-
-        val name = prop.getProperty("name")
-        Log.i(TAG, "Meta module implement: $name")
-        return name
-    } catch (t : Throwable) {
-        Log.i(TAG, "Meta module implement: None")
-        return "None"
-    }
-}
-
-fun toggleModule(id: String, enable: Boolean): Boolean {
-    val cmd = if (enable) {
-        "module enable $id"
-    } else {
-        "module disable $id"
-    }
-    val result = execApd(cmd,true)
-    Log.i(TAG, "$cmd result: $result")
-    return result
-}
-
-fun uninstallModule(id: String): Boolean {
-    val cmd = "module uninstall $id"
-    val result = execApd(cmd,true)
-    Log.i(TAG, "uninstall module $id result: $result")
-    return result
-}
-
-fun undoRemoveModule(id: String): Boolean {
-    val cmd = "module undo-uninstall $id"
-    val result = execApd(cmd,true)
-    Log.i(TAG, "undo-uninstall module $id result: $result")
-    return result
-}
-
-fun installModule(
-    uri: Uri, type: MODULE_TYPE, onFinish: (Boolean) -> Unit, onStdout: (String) -> Unit, onStderr: (String) -> Unit
-): Boolean {
-    val resolver = apApp.contentResolver
-    with(resolver.openInputStream(uri)) {
-        val file = File(apApp.cacheDir, "module_$type.zip")
-        file.outputStream().use { output ->
-            this?.copyTo(output)
-        }
-
-        val stdoutCallback: CallbackList<String?> = object : CallbackList<String?>() {
-            override fun onAddElement(s: String?) {
-                onStdout(s ?: "")
-            }
-        }
-
-        val stderrCallback: CallbackList<String?> = object : CallbackList<String?>() {
-            override fun onAddElement(s: String?) {
-                onStderr(s ?: "")
-            }
-        }
-
-        val shell = getRootShell()
-
-        var result = false
-        if(type == MODULE_TYPE.APM) {
-            val cmd = "${APApplication.APD_PATH} module install ${file.absolutePath}"
-            result = shell.newJob().add(cmd).to(stdoutCallback, stderrCallback)
-                    .exec().isSuccess
-        } else {
-//            ZipUtils.
-        }
-
-        Log.i(TAG, "install $type module $uri result: $result")
-
-        file.delete()
-
-        onFinish(result)
-        return result
-    }
-}
-
-fun runAPModuleAction(
-    moduleId: String, onStdout: (String) -> Unit, onStderr: (String) -> Unit
-): Boolean {
-    val stdoutCallback: CallbackList<String?> = object : CallbackList<String?>() {
-        override fun onAddElement(s: String?) {
-            onStdout(s ?: "")
-        }
-    }
-
-    val stderrCallback: CallbackList<String?> = object : CallbackList<String?>() {
-        override fun onAddElement(s: String?) {
-            onStderr(s ?: "")
-        }
-    }
-
-    val result = withNewRootShell{ 
-        newJob().add("${APApplication.APD_PATH} module action $moduleId")
-        .to(stdoutCallback, stderrCallback).exec()
-    }
-    Log.i(TAG, "APModule runAction result: $result")
-
-    return result.isSuccess
-}
-
 fun reboot(reason: String = "") {
     if (reason == "recovery") {
         // KEYCODE_POWER = 26, hide incorrect "Factory data reset" message
@@ -337,13 +199,6 @@ fun reboot(reason: String = "") {
     }
     getRootShell().newJob()
         .add("/system/bin/svc power reboot $reason || /system/bin/reboot $reason").exec()
-}
-
-fun hasMagisk(): Boolean {
-    val shell = getRootShell()
-    val result = shell.newJob().add("nsenter --mount=/proc/1/ns/mnt which magisk").exec()
-    Log.i(TAG, "has magisk: ${result.isSuccess}")
-    return result.isSuccess
 }
 
 fun isGlobalNamespaceEnabled(): Boolean {
@@ -440,4 +295,3 @@ fun verifyAppSignature(validSignature: String): Boolean {
         validSignature
     )
 }
-

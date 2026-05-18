@@ -14,7 +14,6 @@ import androidx.lifecycle.MutableLiveData
 import com.topjohnwu.superuser.CallbackList
 import com.xmy.ap.ui.CrashHandleActivity
 import com.xmy.ap.util.APatchCli
-import com.xmy.ap.util.APatchKeyHelper
 import com.xmy.ap.util.Version
 import com.xmy.ap.util.getRootShell
 import com.xmy.ap.util.rootShellForResult
@@ -175,74 +174,71 @@ class APApplication : Application(), Thread.UncaughtExceptionHandler {
         }
 
 
-        var superKey: String = ""
-            set(value) {
-                field = value
-                if (value.isNotEmpty() && value != "su") {
-                    APatchKeyHelper.writeSPSuperKey(value)
-                }
-                val ready = Natives.nativeReady(value)
-                _kpStateLiveData.value =
-                    if (ready) State.KERNELPATCH_INSTALLED else State.UNKNOWN_STATE
-                _apStateLiveData.value =
-                    if (ready) State.ANDROIDPATCH_NOT_INSTALLED else State.UNKNOWN_STATE
-                Log.d(TAG, "state: " + _kpStateLiveData.value)
-                if (!ready) return
+        const val ROOT_KEY: String = "su"
 
-                thread {
-                    val rc = Natives.su(0, null)
-                    if (!rc) {
-                        Log.e(TAG, "Native.su failed")
-                        return@thread
-                    }
+        fun refreshRootState() {
+            val ready = Natives.nativeReady(ROOT_KEY)
+            _kpStateLiveData.value =
+                if (ready) State.KERNELPATCH_INSTALLED else State.UNKNOWN_STATE
+            _apStateLiveData.value =
+                if (ready) State.ANDROIDPATCH_NOT_INSTALLED else State.UNKNOWN_STATE
+            Log.d(TAG, "state: " + _kpStateLiveData.value)
+            if (!ready) return
 
-                    // KernelPatch version
-                    //val buildV = Version.buildKPVUInt()
-                    //val installedV = Version.installedKPVUInt()
-                    //use build time to check update
-                    val buildV = Version.getKpImg()
-                    val installedV = Version.installedKPTime()
-
-
-                    Log.d(TAG, "kp installed version: ${installedV}, build version: $buildV")
-
-                    // use != instead of > to enable downgrade,
-                    if (buildV != installedV) {
-                        _kpStateLiveData.postValue(State.KERNELPATCH_NEED_UPDATE)
-                    }
-                    Log.d(TAG, "kp state: " + _kpStateLiveData.value)
-
-                    if (File(NEED_REBOOT_FILE).exists()) {
-                        _kpStateLiveData.postValue(State.KERNELPATCH_NEED_REBOOT)
-                    }
-                    Log.d(TAG, "kp state: " + _kpStateLiveData.value)
-
-                    // AndroidPatch version
-                    val mgv = Version.getManagerVersion().second
-                    val installedApdVInt = Version.installedApdVUInt()
-                    Log.d(TAG, "manager version: $mgv, installed apd version: $installedApdVInt")
-
-                    if (Version.installedApdVInt > 0) {
-                        _apStateLiveData.postValue(State.ANDROIDPATCH_INSTALLED)
-                    }
-
-                    if (Version.installedApdVInt > 0 && mgv.toInt() != Version.installedApdVInt) {
-                        _apStateLiveData.postValue(State.ANDROIDPATCH_NEED_UPDATE)
-                        // su path
-                        val suPathFile = File(SU_PATH_FILE)
-                        if (suPathFile.exists()) {
-                            val suPath = suPathFile.readLines()[0].trim()
-                            if (Natives.suPath() != suPath) {
-                                Log.d(TAG, "su path: $suPath")
-                                Natives.resetSuPath(suPath)
-                            }
-                        }
-                    }
-                    Log.d(TAG, "ap state: " + _apStateLiveData.value)
-
+            thread {
+                val rc = Natives.su(0, null)
+                if (!rc) {
+                    Log.e(TAG, "Native.su failed")
                     return@thread
                 }
+
+                // KernelPatch version
+                //val buildV = Version.buildKPVUInt()
+                //val installedV = Version.installedKPVUInt()
+                //use build time to check update
+                val buildV = Version.getKpImg()
+                val installedV = Version.installedKPTime()
+
+
+                Log.d(TAG, "kp installed version: ${installedV}, build version: $buildV")
+
+                // use != instead of > to enable downgrade,
+                if (buildV != installedV) {
+                    _kpStateLiveData.postValue(State.KERNELPATCH_NEED_UPDATE)
+                }
+                Log.d(TAG, "kp state: " + _kpStateLiveData.value)
+
+                if (File(NEED_REBOOT_FILE).exists()) {
+                    _kpStateLiveData.postValue(State.KERNELPATCH_NEED_REBOOT)
+                }
+                Log.d(TAG, "kp state: " + _kpStateLiveData.value)
+
+                // AndroidPatch version
+                val mgv = Version.getManagerVersion().second
+                val installedApdVInt = Version.installedApdVUInt()
+                Log.d(TAG, "manager version: $mgv, installed apd version: $installedApdVInt")
+
+                if (Version.installedApdVInt > 0) {
+                    _apStateLiveData.postValue(State.ANDROIDPATCH_INSTALLED)
+                }
+
+                if (Version.installedApdVInt > 0 && mgv.toInt() != Version.installedApdVInt) {
+                    _apStateLiveData.postValue(State.ANDROIDPATCH_NEED_UPDATE)
+                    // su path
+                    val suPathFile = File(SU_PATH_FILE)
+                    if (suPathFile.exists()) {
+                        val suPath = suPathFile.readLines()[0].trim()
+                        if (Natives.suPath() != suPath) {
+                            Log.d(TAG, "su path: $suPath")
+                            Natives.resetSuPath(suPath)
+                        }
+                    }
+                }
+                Log.d(TAG, "ap state: " + _apStateLiveData.value)
+
+                return@thread
             }
+        }
     }
 
     override fun onCreate() {
@@ -268,13 +264,8 @@ class APApplication : Application(), Thread.UncaughtExceptionHandler {
             }
         }
 
-        // TODO: We can't totally protect superkey from be stolen by root or LSPosed-like injection tools in user space, the only way is don't use superkey,
-        // TODO: 1. make me root by kernel
-        // TODO: 2. remove all usage of superkey
         sharedPreferences = getSharedPreferences(SP_NAME, Context.MODE_PRIVATE)
-        APatchKeyHelper.setSharedPreferences(sharedPreferences)
-        val savedKey = APatchKeyHelper.readSPSuperKey()
-        superKey = if (savedKey.isNullOrEmpty()) "su" else savedKey
+        refreshRootState()
 
         okhttpClient =
             OkHttpClient.Builder().cache(Cache(File(cacheDir, "okhttp"), 10 * 1024 * 1024))

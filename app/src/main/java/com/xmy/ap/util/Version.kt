@@ -34,7 +34,7 @@ object Version {
     fun getKpImg(): String {
         var shell: Shell = createRootShell()
         var kimgInfo = mutableStateOf(KPModel.KImgInfo("", false))
-        var kpimgInfo = mutableStateOf(KPModel.KPImgInfo("", "", "", "", ""))
+        var kpimgInfo = mutableStateOf(KPModel.KPImgInfo("", "", ""))
         val patchDir: ExtendedFile = FileSystemManager.getLocal().getFile(apApp.filesDir.parent, "check")
         patchDir.deleteRecursively()
         patchDir.mkdirs()
@@ -70,8 +70,6 @@ object Version {
                     kpimg["version"].toString(),
                     kpimg["compile_time"].toString(),
                     kpimg["config"].toString(),
-                    APApplication.superKey,     // current key
-                    kpimg["root_superkey"].toString()      // possibly empty
                 )
                 return kpimg["compile_time"].toString()
             } 
@@ -151,4 +149,3 @@ object Version {
     var installedApdVInt: Int = 0
     var installedApdVString: String = "0"
 }
-

@@ -3,7 +3,7 @@
 # APatch Boot Image Patcher
 #######################################################################################
 #
-# Usage: boot_patch.sh <superkey> <bootimage> [ARGS_PASS_TO_KPTOOLS]
+# Usage: boot_patch.sh <bootimage> [flash_to_device] [ARGS_PASS_TO_KPTOOLS]
 #
 # This script should be placed in a directory with the following files:
 #
@@ -27,12 +27,14 @@ echo "****************************"
 echo " APatch Boot Image Patcher"
 echo "****************************"
 
-SUPERKEY="$1"
-BOOTIMAGE=$2
-FLASH_TO_DEVICE=$3
-shift 2
+BOOTIMAGE=$1
+shift 1
+FLASH_TO_DEVICE=false
+if [ "$1" = "true" ] || [ "$1" = "false" ]; then
+  FLASH_TO_DEVICE=$1
+  shift 1
+fi
 
-[ -z "$SUPERKEY" ] && { >&2 echo "- SuperKey empty!"; exit 1; }
 [ -e "$BOOTIMAGE" ] || { >&2 echo "- $BOOTIMAGE does not exist!"; exit 1; }
 
 # Check for dependencies
@@ -68,11 +70,8 @@ mv kernel kernel.ori
 
 echo "- Patching kernel"
 
-KPT_ARGS=""
-[ "$SUPERKEY" != "su" ] && KPT_ARGS="-S $SUPERKEY"
-
 set -x
-./kptools -p -i kernel.ori $KPT_ARGS -k kpimg -o kernel "$@"
+./kptools -p -i kernel.ori -k kpimg -o kernel "$@"
 patch_rc=$?
 set +x
 
@@ -110,4 +109,3 @@ if [ "$FLASH_TO_DEVICE" = "true" ]; then
 else
   echo "- Successfully Patched!"
 fi
-

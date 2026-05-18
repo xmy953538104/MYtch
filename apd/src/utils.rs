@@ -3,7 +3,6 @@ use std::fs::{Permissions, set_permissions};
 #[cfg(unix)]
 use std::os::unix::prelude::PermissionsExt;
 use std::{
-    ffi::CString,
     fs::{File, OpenOptions, create_dir_all, metadata},
     io::{ErrorKind::AlreadyExists, Write},
     path::Path,
@@ -11,9 +10,8 @@ use std::{
 };
 
 use anyhow::{Context, Error, Ok, Result, bail};
-use log::{info, warn};
 
-use crate::{defs, supercall::sc_su_get_safemode};
+use crate::defs;
 
 pub fn ensure_file_exists<T: AsRef<Path>>(file: T) -> Result<()> {
     match File::options().write(true).create_new(true).open(&file) {
@@ -68,31 +66,6 @@ pub fn run_command(
     let child = command_builder.spawn()?;
     Ok(child)
 }
-pub fn is_safe_mode(superkey: Option<String>) -> bool {
-    let safemode = getprop("persist.sys.safemode")
-        .filter(|prop| prop == "1")
-        .is_some()
-        || getprop("ro.sys.safemode")
-            .filter(|prop| prop == "1")
-            .is_some();
-    info!("safemode: {}", safemode);
-    if safemode {
-        return true;
-    }
-    let safemode = superkey
-        .as_ref()
-        .and_then(|key_str| CString::new(key_str.as_str()).ok())
-        .map_or_else(
-            || {
-                warn!("[is_safe_mode] No valid superkey provided, assuming safemode as false.");
-                false
-            },
-            |cstr| sc_su_get_safemode(&cstr) == 1,
-        );
-    info!("kernel_safemode: {}", safemode);
-    safemode
-}
-
 #[cfg(any(target_os = "linux", target_os = "android"))]
 pub fn switch_mnt_ns(pid: i32) -> Result<()> {
     use std::os::fd::AsRawFd;
@@ -145,9 +118,6 @@ pub fn umask(_mask: u32) {
     unimplemented!("umask is not supported on this platform")
 }
 
-pub fn has_magisk() -> bool {
-    which::which("magisk").is_ok()
-}
 pub fn get_tmp_path() -> &'static str {
     if metadata(defs::TEMP_DIR_LEGACY).is_ok() {
         return defs::TEMP_DIR_LEGACY;

@@ -1,5 +1,5 @@
 /* SPDX-License-Identifier: GPL-2.0-or-later */
-/* 
+/*
  * Copyright (C) 2023 bmax121. All Rights Reserved.
  */
 
@@ -25,9 +25,9 @@ static inline long ver_and_cmd(const char *key, long cmd)
 
 /**
  * @brief If KernelPatch installed, @see SUPERCALL_HELLO_ECHO will echoed.
- * 
- * @param key : superkey or 'su' string if caller uid is su allowed 
- * @return long 
+ *
+ * @param key : trusted key or 'su' string if caller uid is su allowed
+ * @return long
  */
 static inline long sc_hello(const char *key)
 {
@@ -38,10 +38,10 @@ static inline long sc_hello(const char *key)
 
 /**
  * @brief Is KernelPatch installed?
- * 
- * @param key : superkey or 'su' string if caller uid is su allowed 
- * @return true 
- * @return false 
+ *
+ * @param key : trusted key or 'su' string if caller uid is su allowed
+ * @return true
+ * @return false
  */
 static inline bool sc_ready(const char *key)
 {
@@ -50,10 +50,10 @@ static inline bool sc_ready(const char *key)
 
 /**
  * @brief Print messages by printk in the kernel
- * 
- * @param key : superkey or 'su' string if caller uid is su allowed 
- * @param msg 
- * @return long 
+ *
+ * @param key : trusted key or 'su' string if caller uid is su allowed
+ * @param msg
+ * @return long
  */
 static inline long sc_klog(const char *key, const char *msg)
 {
@@ -65,11 +65,11 @@ static inline long sc_klog(const char *key, const char *msg)
 
 /**
  * @brief Print build kernel time
- * 
- * @param key : superkey or 'su' string if caller uid is su allowed 
- * @param buildtime 
+ *
+ * @param key : trusted key or 'su' string if caller uid is su allowed
+ * @param buildtime
  * @param timestamp
- * @return long 
+ * @return long
  */
  static inline long sc_get_build_time(const char *key, const char *buildtime, size_t len)
  {
@@ -81,9 +81,9 @@ static inline long sc_klog(const char *key, const char *msg)
 
 /**
  * @brief KernelPatch version number
- * 
- * @param key 
- * @return uint32_t 
+ *
+ * @param key
+ * @return uint32_t
  */
 static inline uint32_t sc_kp_ver(const char *key)
 {
@@ -94,9 +94,9 @@ static inline uint32_t sc_kp_ver(const char *key)
 
 /**
  * @brief Kernel version number
- * 
- * @param key : superkey or 'su' string if caller uid is su allowed 
- * @return uint32_t 
+ *
+ * @param key : trusted key or 'su' string if caller uid is su allowed
+ * @return uint32_t
  */
 static inline uint32_t sc_k_ver(const char *key)
 {
@@ -107,8 +107,8 @@ static inline uint32_t sc_k_ver(const char *key)
 
 /**
  * @brief Substitute user of current thread
- * 
- * @param key : superkey or 'su' string if caller uid is su allowed 
+ *
+ * @param key : trusted key or 'su' string if caller uid is su allowed
  * @param profile : if scontext is invalid or illegal, all selinux permission checks will bypass via hook
  * @see struct su_profile
  * @return long : 0 if succeed
@@ -123,12 +123,12 @@ static inline long sc_su(const char *key, struct su_profile *profile)
 
 /**
  * @brief Substitute user of tid specfied thread
- * 
- * @param key : superkey or 'su' string if caller uid is su allowed 
+ *
+ * @param key : trusted key or 'su' string if caller uid is su allowed
  * @param tid : target thread id
  * @param profile : if scontext is invalid or illegal, all selinux permission checks will bypass via hook
  * @see struct su_profile
- * @return long : 0 if succeed 
+ * @return long : 0 if succeed
  */
 static inline long sc_su_task(const char *key, pid_t tid, struct su_profile *profile)
 {
@@ -138,14 +138,14 @@ static inline long sc_su_task(const char *key, pid_t tid, struct su_profile *pro
 }
 
 /**
- * @brief 
- * 
- * @param key 
+ * @brief
+ *
+ * @param key
  * @param gid group id
  * @param did data id
- * @param data 
- * @param dlen 
- * @return long 
+ * @param data
+ * @param dlen
+ * @return long
  */
 static inline long sc_kstorage_write(const char *key, int gid, long did, void *data, int offset, int dlen)
 {
@@ -155,14 +155,14 @@ static inline long sc_kstorage_write(const char *key, int gid, long did, void *d
 }
 
 /**
- * @brief 
- * 
- * @param key 
- * @param gid 
- * @param did 
- * @param out_data 
- * @param dlen 
- * @return long 
+ * @brief
+ *
+ * @param key
+ * @param gid
+ * @param did
+ * @param out_data
+ * @param dlen
+ * @return long
  */
 static inline long sc_kstorage_read(const char *key, int gid, long did, void *out_data, int offset, int dlen)
 {
@@ -173,12 +173,12 @@ static inline long sc_kstorage_read(const char *key, int gid, long did, void *ou
 
 
 /**
- * @brief 
- * 
- * @param key 
- * @param gid 
- * @param ids 
- * @param ids_len 
+ * @brief
+ *
+ * @param key
+ * @param gid
+ * @param ids
+ * @param ids_len
  * @return long numbers of listed ids
  */
 static inline long sc_kstorage_list_ids(const char *key, int gid, long *ids, int ids_len)
@@ -190,12 +190,12 @@ static inline long sc_kstorage_list_ids(const char *key, int gid, long *ids, int
 
 
 /**
- * @brief 
- * 
- * @param key 
- * @param gid 
- * @param did 
- * @return long 
+ * @brief
+ *
+ * @param key
+ * @param gid
+ * @param did
+ * @return long
  */
 static inline long sc_kstorage_remove(const char *key, int gid, long did)
 {
@@ -206,12 +206,12 @@ static inline long sc_kstorage_remove(const char *key, int gid, long did)
 
 #ifdef ANDROID
 /**
- * @brief 
- * 
- * @param key 
- * @param uid 
- * @param exclude 
- * @return long 
+ * @brief
+ *
+ * @param key
+ * @param uid
+ * @param exclude
+ * @return long
  */
 static inline long sc_set_ap_mod_exclude(const char *key, uid_t uid, int exclude)
 {
@@ -224,12 +224,12 @@ static inline long sc_set_ap_mod_exclude(const char *key, uid_t uid, int exclude
 
 
 /**
- * @brief 
- * 
- * @param key 
- * @param uid 
- * @param exclude 
- * @return long 
+ * @brief
+ *
+ * @param key
+ * @param uid
+ * @param exclude
+ * @return long
  */
 static inline int sc_get_ap_mod_exclude(const char *key, uid_t uid)
 {
@@ -258,8 +258,8 @@ static inline int sc_list_ap_mod_exclude(const char *key, uid_t *uids, int uids_
 
 /**
  * @brief Grant su permission
- * 
- * @param key 
+ *
+ * @param key
  * @param profile : if scontext is invalid or illegal, all selinux permission checks will bypass via hook
  * @return long : 0 if succeed
  */
@@ -272,9 +272,9 @@ static inline long sc_su_grant_uid(const char *key, struct su_profile *profile)
 
 /**
  * @brief Revoke su permission
- * 
- * @param key 
- * @param uid 
+ *
+ * @param key
+ * @param uid
  * @return long 0 if succeed
  */
 static inline long sc_su_revoke_uid(const char *key, uid_t uid)
@@ -286,9 +286,9 @@ static inline long sc_su_revoke_uid(const char *key, uid_t uid)
 
 /**
  * @brief Get numbers of su allowed uids
- * 
- * @param key 
- * @return long 
+ *
+ * @param key
+ * @return long
  */
 static inline long sc_su_uid_nums(const char *key)
 {
@@ -298,11 +298,11 @@ static inline long sc_su_uid_nums(const char *key)
 }
 
 /**
- * @brief 
- * 
- * @param key : superkey or 'su' string if caller uid is su allowed 
- * @param buf 
- * @param num 
+ * @brief
+ *
+ * @param key : trusted key or 'su' string if caller uid is su allowed
+ * @param buf
+ * @param num
  * @return long : The numbers of uids if succeed, nagative value if failed
  */
 static inline long sc_su_allow_uids(const char *key, uid_t *buf, int num)
@@ -315,10 +315,10 @@ static inline long sc_su_allow_uids(const char *key, uid_t *buf, int num)
 
 /**
  * @brief Get su profile of specified uid
- * 
- * @param key 
- * @param uid 
- * @param out_profile 
+ *
+ * @param key
+ * @param uid
+ * @param out_profile
  * @return long : 0 if succeed
  */
 static inline long sc_su_uid_profile(const char *key, uid_t uid, struct su_profile *out_profile)
@@ -329,11 +329,11 @@ static inline long sc_su_uid_profile(const char *key, uid_t uid, struct su_profi
 }
 
 /**
- * @brief Get full path of current 'su' command 
- * 
- * @param key : superkey or 'su' string if caller uid is su allowed 
- * @param out_path 
- * @param path_len 
+ * @brief Get full path of current 'su' command
+ *
+ * @param key : trusted key or 'su' string if caller uid is su allowed
+ * @param out_path
+ * @param path_len
  * @return long : The length of result string if succeed, negative if failed
  */
 static inline long sc_su_get_path(const char *key, char *out_path, int path_len)
@@ -345,10 +345,10 @@ static inline long sc_su_get_path(const char *key, char *out_path, int path_len)
 }
 
 /**
- * @brief Reset full path of 'su' command 
- * 
- * @param key 
- * @param path 
+ * @brief Reset full path of 'su' command
+ *
+ * @param key
+ * @param path
  * @return long : 0 if succeed
  */
 static inline long sc_su_reset_path(const char *key, const char *path)
@@ -361,9 +361,9 @@ static inline long sc_su_reset_path(const char *key, const char *path)
 
 /**
  * @brief Get current all-allowed selinux context
- * 
- * @param key : superkey or 'su' string if caller uid is su allowed  
- * @param out_sctx 
+ *
+ * @param key : trusted key or 'su' string if caller uid is su allowed
+ * @param out_sctx
  * @param sctx_len
  * @return long 0 if there is a all-allowed selinux context now
  */
@@ -377,9 +377,9 @@ static inline long sc_su_get_all_allow_sctx(const char *key, char *out_sctx, int
 
 /**
  * @brief Reset current all-allowed selinux context
- * 
- * @param key : superkey or 'su' string if caller uid is su allowed  
- * @param sctx If sctx is empty string, clear all-allowed selinux, 
+ *
+ * @param key : trusted key or 'su' string if caller uid is su allowed
+ * @param sctx If sctx is empty string, clear all-allowed selinux,
  * otherwise, try to reset a new all-allowed selinux context
  * @return long 0 if succeed
  */
@@ -393,11 +393,11 @@ static inline long sc_su_reset_all_allow_sctx(const char *key, const char *sctx)
 
 /**
  * @brief Load module
- * 
- * @param key : superkey
- * @param path 
- * @param args 
- * @param reserved 
+ *
+ * @param key : trusted key
+ * @param path
+ * @param args
+ * @param reserved
  * @return long : 0 if succeed
  */
 static inline long sc_kpm_load(const char *key, const char *path, const char *args, void *reserved)
@@ -409,9 +409,9 @@ static inline long sc_kpm_load(const char *key, const char *path, const char *ar
 }
 
 /**
- * @brief Control module with arguments 
- * 
- * @param key : superkey
+ * @brief Control module with arguments
+ *
+ * @param key : trusted key
  * @param name : module name
  * @param ctl_args : control argument
  * @param out_msg : output message buffer
@@ -429,10 +429,10 @@ static inline long sc_kpm_control(const char *key, const char *name, const char 
 
 /**
  * @brief Unload module
- * 
- * @param key : superkey
+ *
+ * @param key : trusted key
  * @param name : module name
- * @param reserved 
+ * @param reserved
  * @return long : 0 if succeed
  */
 static inline long sc_kpm_unload(const char *key, const char *name, void *reserved)
@@ -445,8 +445,8 @@ static inline long sc_kpm_unload(const char *key, const char *name, void *reserv
 
 /**
  * @brief Current loaded module numbers
- * 
- * @param key : superkey
+ *
+ * @param key : trusted key
  * @return long
  */
 static inline long sc_kpm_nums(const char *key)
@@ -458,8 +458,8 @@ static inline long sc_kpm_nums(const char *key)
 
 /**
  * @brief List names of current loaded modules, splited with '\n'
- * 
- * @param key : superkey
+ *
+ * @param key : trusted key
  * @param names_buf : output buffer
  * @param buf_len : the length of names_buf
  * @return long : the length of result string if succeed, negative if failed
@@ -473,12 +473,12 @@ static inline long sc_kpm_list(const char *key, char *names_buf, int buf_len)
 }
 
 /**
- * @brief Get module information. 
- * 
- * @param key : superkey
+ * @brief Get module information.
+ *
+ * @param key : trusted key
  * @param name : module name
- * @param buf : 
- * @param buf_len : 
+ * @param buf :
+ * @param buf_len :
  * @return long : The length of result string if succeed, negative if failed
  */
 static inline long sc_kpm_info(const char *key, const char *name, char *buf, int buf_len)
@@ -486,51 +486,6 @@ static inline long sc_kpm_info(const char *key, const char *name, char *buf, int
     if (!key || !key[0]) return -EINVAL;
     if (!buf || buf_len <= 0) return -EINVAL;
     long ret = syscall(__NR_supercall, key, ver_and_cmd(key, SUPERCALL_KPM_INFO), name, buf, buf_len);
-    return ret;
-}
-
-/**
- * @brief Get current superkey
- * 
- * @param key : superkey
- * @param out_key 
- * @param outlen 
- * @return long : 0 if succeed
- */
-static inline long sc_skey_get(const char *key, char *out_key, int outlen)
-{
-    if (!key || !key[0]) return -EINVAL;
-    if (outlen < SUPERCALL_KEY_MAX_LEN) return -EINVAL;
-    long ret = syscall(__NR_supercall, key, ver_and_cmd(key, SUPERCALL_SKEY_GET), out_key, outlen);
-    return ret;
-}
-
-/**
- * @brief Reset current superkey
- * 
- * @param key : superkey
- * @param new_key 
- * @return long : 0 if succeed
- */
-static inline long sc_skey_set(const char *key, const char *new_key)
-{
-    if (!key || !key[0]) return -EINVAL;
-    if (!new_key || !new_key[0]) return -EINVAL;
-    long ret = syscall(__NR_supercall, key, ver_and_cmd(key, SUPERCALL_SKEY_SET), new_key);
-    return ret;
-}
-
-/**
- * @brief Whether to enable hash verification for root superkey.
- * 
- * @param key : superkey
- * @param enable 
- * @return long 
- */
-static inline long sc_skey_root_enable(const char *key, bool enable)
-{
-    if (!key || !key[0]) return -EINVAL;
-    long ret = syscall(__NR_supercall, key, ver_and_cmd(key, SUPERCALL_SKEY_ROOT_ENABLE), (long)enable);
     return ret;
 }
 

@@ -27,10 +27,6 @@ static inline long hash_key(const char *key)
 #define SUPERCALL_KERNELPATCH_VER 0x1008
 #define SUPERCALL_KERNEL_VER 0x1009
 
-#define SUPERCALL_SKEY_GET 0x100a
-#define SUPERCALL_SKEY_SET 0x100b
-#define SUPERCALL_SKEY_ROOT_ENABLE 0x100c
-
 #define SUPERCALL_SU 0x1010
 #define SUPERCALL_SU_TASK 0x1011 // syscall(__NR_gettid)
 

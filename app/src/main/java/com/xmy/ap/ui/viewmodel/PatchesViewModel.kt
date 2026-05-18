@@ -55,8 +55,7 @@ class PatchesViewModel : ViewModel() {
     var bootSlot by mutableStateOf("")
     var bootDev by mutableStateOf("")
     var kimgInfo by mutableStateOf(KPModel.KImgInfo("", false))
-    var kpimgInfo by mutableStateOf(KPModel.KPImgInfo("", "", "", "", ""))
-    var superkey by mutableStateOf("")
+    var kpimgInfo by mutableStateOf(KPModel.KPImgInfo("", "", ""))
     var existedExtras = mutableStateListOf<KPModel.IExtraInfo>()
     var newExtras = mutableStateListOf<KPModel.IExtraInfo>()
     var newExtrasFileName = mutableListOf<String>()
@@ -115,8 +114,6 @@ class PatchesViewModel : ViewModel() {
                     kpimg["version"].toString(),
                     kpimg["compile_time"].toString(),
                     kpimg["config"].toString(),
-                    "",     // manager no longer keeps a separate superkey
-                    kpimg["root_superkey"].toString(),   // empty
                 )
             } else {
                 error += "parse kpimg error\n"
@@ -145,11 +142,6 @@ class PatchesViewModel : ViewModel() {
             }
             kimgInfo = KPModel.KImgInfo(kernel["banner"].toString(), kernel["patched"].toBoolean())
             if (kimgInfo.patched) {
-                val superkey = ini["kpimg"]?.getOrDefault("superkey", "") ?: ""
-                kpimgInfo.superKey = superkey
-                if (checkSuperKeyValidation(superkey)) {
-                    this.superkey = superkey
-                }
                 var kpmNum = kernel["extra_num"]?.toInt()
                 if (kpmNum == null) {
                     val extras = ini["extras"]
@@ -186,10 +178,6 @@ class PatchesViewModel : ViewModel() {
         } else {
             error += result.err.joinToString("\n")
         }
-    }
-
-    val checkSuperKeyValidation: (superKey: String) -> Boolean = { superKey ->
-        superKey.length in 8..63 && superKey.any { it.isDigit() } && superKey.any { it.isLetter() }
     }
 
     fun copyAndParseBootimg(uri: Uri) {
@@ -349,7 +337,7 @@ class PatchesViewModel : ViewModel() {
         val suFile = File("/system/bin/su")
         return suFile.exists() && suFile.canExecute()
     }
-    fun doPatch(mode: PatchMode, useKey: Boolean) {
+    fun doPatch(mode: PatchMode) {
         viewModelScope.launch(Dispatchers.IO) {
             patching = true
             Log.d(TAG, "starting patching...")
@@ -372,24 +360,22 @@ class PatchesViewModel : ViewModel() {
             // adapt for 0.10.7 and lower KP
             var isKpOld = false
 
-            val superkey = if (useKey && this@PatchesViewModel.superkey.isNotEmpty()) this@PatchesViewModel.superkey else "su"
-
             if (mode == PatchMode.PATCH_AND_INSTALL || mode == PatchMode.INSTALL_TO_NEXT_SLOT) {
 
-                val KPCheck = shell.newJob().add("truncate ${APApplication.superKey} -Z u:r:magisk:s0 -c whoami").exec()
+                val KPCheck = shell.newJob().add("truncate ${APApplication.ROOT_KEY} -Z u:r:magisk:s0 -c whoami").exec()
 
                 if (KPCheck.isSuccess && !isSuExecutable()) {
-                    patchCommand.addAll(0, listOf("truncate", APApplication.superKey, "-Z", APApplication.MAGISK_SCONTEXT, "-c"))
-                    patchCommand.addAll(listOf(superkey, srcBoot.path, "true"))
+                    patchCommand.addAll(0, listOf("truncate", APApplication.ROOT_KEY, "-Z", APApplication.MAGISK_SCONTEXT, "-c"))
+                    patchCommand.addAll(listOf(srcBoot.path, "true"))
                 } else {
                     patchCommand = mutableListOf("./busybox", "sh", "boot_patch.sh")
-                    patchCommand.addAll(listOf(superkey, srcBoot.path, "true"))
+                    patchCommand.addAll(listOf(srcBoot.path, "true"))
                     isKpOld = true
                 }
 
             } else {
                 patchCommand.addAll(0, listOf("sh", "-c"))
-                patchCommand.addAll(listOf(superkey, srcBoot.path))
+                patchCommand.addAll(listOf(srcBoot.path))
             }
 
             for (i in 0..<newExtrasFileName.size) {
@@ -485,23 +471,20 @@ class PatchesViewModel : ViewModel() {
                     ).exec()
                     if (setNextActiveSlot.isSuccess) {
                         logs.add("- Switch done")
-                        logs.add("- Writing boot marker script...")
-                        val markBootableScript = shell.newJob().add(
-                            "mkdir -p /data/adb/post-fs-data.d && rm -rf /data/adb/post-fs-data.d/post_ota.sh && touch /data/adb/post-fs-data.d/post_ota.sh",
-                            "echo \"chmod 0777 $patchDir/bootctl\" > /data/adb/post-fs-data.d/post_ota.sh",
-                            "echo \"chown root:root 0777 $patchDir/bootctl\" > /data/adb/post-fs-data.d/post_ota.sh",
-                            "echo \"$patchDir/bootctl mark-boot-successful\" > /data/adb/post-fs-data.d/post_ota.sh",
-                            "echo >> /data/adb/post-fs-data.d/post_ota.sh",
-                            "echo \"rm -rf $patchDir\" >> /data/adb/post-fs-data.d/post_ota.sh",
-                            "echo >> /data/adb/post-fs-data.d/post_ota.sh",
-                            "echo \"rm -f /data/adb/post-fs-data.d/post_ota.sh\" >> /data/adb/post-fs-data.d/post_ota.sh",
-                            "chmod 0777 /data/adb/post-fs-data.d/post_ota.sh",
-                            "chown root:root /data/adb/post-fs-data.d/post_ota.sh",
+                        logs.add("- Writing boot marker...")
+                        val markBootable = shell.newJob().add(
+                            "mkdir -p ${APApplication.APATCH_FOLDER}bin",
+                            "cp -f $patchDir/bootctl ${APApplication.APATCH_FOLDER}bin/bootctl",
+                            "chmod 0755 ${APApplication.APATCH_FOLDER}bin/bootctl",
+                            "chown root:root ${APApplication.APATCH_FOLDER}bin/bootctl",
+                            "touch ${APApplication.APATCH_FOLDER}post_ota_mark_boot",
+                            "chmod 0600 ${APApplication.APATCH_FOLDER}post_ota_mark_boot",
+                            "chown root:root ${APApplication.APATCH_FOLDER}post_ota_mark_boot",
                         ).to(logs, logs).exec()
-                        if (markBootableScript.isSuccess) {
-                            logs.add("- Boot marker script write done")
+                        if (markBootable.isSuccess) {
+                            logs.add("- Boot marker write done")
                         } else {
-                            logs.add("[X] Boot marker scripts write failed")
+                            logs.add("[X] Boot marker write failed")
                         }
                     }
                 }
@@ -574,4 +557,3 @@ class PatchesViewModel : ViewModel() {
     }
 
 }
-

@@ -51,8 +51,6 @@ object KPModel {
         var version: String,
         var compileTime: String,
         var config: String,
-        var superKey: String,
-        var rootSuperkey: String
     ) : Parcelable
 
     @Immutable

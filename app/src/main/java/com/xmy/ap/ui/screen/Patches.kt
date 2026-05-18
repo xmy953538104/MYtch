@@ -8,11 +8,6 @@ import android.net.Uri
 import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.expandVertically
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -29,16 +24,12 @@ import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.Key
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material.icons.filled.Visibility
-import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.AlertDialogDefaults
 import androidx.compose.material3.BasicAlertDialog
 import androidx.compose.material3.Button
@@ -48,7 +39,6 @@ import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
@@ -63,17 +53,12 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.input.PasswordVisualTransformation
-import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.DialogProperties
 import androidx.compose.ui.window.DialogWindowProvider
@@ -86,7 +71,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import com.xmy.ap.R
-import com.xmy.ap.ui.component.SwitchItem
 import com.xmy.ap.ui.viewmodel.KPModel
 import com.xmy.ap.ui.viewmodel.PatchesViewModel
 import com.xmy.ap.util.Version
@@ -100,8 +84,6 @@ private const val TAG = "Patches"
 fun Patches(mode: PatchesViewModel.PatchMode) {
     val scrollState = rememberScrollState()
     val scope = rememberCoroutineScope()
-
-    var needKey by rememberSaveable { mutableStateOf(false) }
 
     val viewModel = viewModel<PatchesViewModel>()
     SideEffect {
@@ -183,37 +165,6 @@ fun Patches(mode: PatchesViewModel.PatchMode) {
                 KernelImageView(viewModel.kimgInfo)
             }
 
-            if (mode != PatchesViewModel.PatchMode.UNPATCH && viewModel.kimgInfo.banner.isNotEmpty()) {
-                ElevatedCard(
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = CardDefaults.elevatedCardColors(
-                        containerColor = MaterialTheme.colorScheme.secondaryContainer
-                    ),
-                    elevation = CardDefaults.elevatedCardElevation(defaultElevation = 2.dp)
-                ) {
-                    SwitchItem(
-                        icon = Icons.Default.Key,
-                        title = stringResource(R.string.patch_custom_superkey),
-                        summary = stringResource(R.string.patch_custom_superkey_summary),
-                        checked = needKey,
-                        onCheckedChange = { checked ->
-                            needKey = checked
-                        }
-                    )
-                }
-
-                AnimatedVisibility(
-                    visible = needKey,
-                    enter = expandVertically() + fadeIn(),
-                    exit = shrinkVertically() + fadeOut()
-                ) {
-                    Column {
-                        Spacer(modifier = Modifier.height(8.dp))
-                        SetSuperKeyView(viewModel)
-                    }
-                }
-            }
-
             // existed extras
             if (mode == PatchesViewModel.PatchMode.PATCH_AND_INSTALL || mode == PatchesViewModel.PatchMode.INSTALL_TO_NEXT_SLOT) {
                 viewModel.existedExtras.forEach(action = {
@@ -249,11 +200,8 @@ fun Patches(mode: PatchesViewModel.PatchMode) {
             if (!viewModel.patching && !viewModel.patchdone) {
                 // patch start
                 if (mode != PatchesViewModel.PatchMode.UNPATCH) {
-                    val isKeyReady = !needKey || viewModel.superkey.isNotEmpty()
-                    if (isKeyReady) {
-                        StartButton(stringResource(id = R.string.patch_start_patch_btn)) {
-                            viewModel.doPatch(mode, needKey)
-                        }
+                    StartButton(stringResource(id = R.string.patch_start_patch_btn)) {
+                        viewModel.doPatch(mode)
                     }
                 }
                 // unpatch
@@ -451,82 +399,6 @@ private fun ExtraItem(extra: KPModel.IExtraInfo, existed: Boolean, onDelete: () 
                     text = "${stringResource(id = R.string.patch_item_extra_kpm_desciption) + " "} ${kpmInfo.description}",
                     style = MaterialTheme.typography.bodyMedium
                 )
-            }
-        }
-    }
-}
-
-
-@Composable
-private fun SetSuperKeyView(viewModel: PatchesViewModel) {
-    var skey by remember { mutableStateOf(viewModel.superkey) }
-    var showWarn by remember { mutableStateOf(!viewModel.checkSuperKeyValidation(skey)) }
-    var keyVisible by remember { mutableStateOf(false) }
-    ElevatedCard(
-        colors = CardDefaults.elevatedCardColors(containerColor = run {
-            MaterialTheme.colorScheme.secondaryContainer
-        })
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(12.dp),
-        ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth(),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                Text(
-                    text = stringResource(id = R.string.patch_item_skey),
-                    style = MaterialTheme.typography.bodyLarge
-                )
-            }
-            if (showWarn) {
-                Spacer(modifier = Modifier.height(3.dp))
-                Text(
-                    color = Color.Red,
-                    text = stringResource(id = R.string.patch_item_set_skey_label),
-                    style = MaterialTheme.typography.bodyMedium
-                )
-            }
-            Column {
-                Box(
-                    contentAlignment = Alignment.CenterEnd,
-                ) {
-                    OutlinedTextField(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(top = 6.dp),
-                        value = skey,
-                        label = { Text(stringResource(id = R.string.patch_set_superkey)) },
-                        visualTransformation = if (keyVisible) VisualTransformation.None else PasswordVisualTransformation(),
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
-                        shape = RoundedCornerShape(50.0f),
-                        onValueChange = {
-                            skey = it
-                            if (viewModel.checkSuperKeyValidation(it)) {
-                                viewModel.superkey = it
-                                showWarn = false
-                            } else {
-                                viewModel.superkey = ""
-                                showWarn = true
-                            }
-                        },
-                    )
-                    IconButton(
-                        modifier = Modifier
-                            .size(40.dp)
-                            .padding(top = 15.dp, end = 5.dp),
-                        onClick = { keyVisible = !keyVisible }
-                    ) {
-                        Icon(
-                            imageVector = if (keyVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff,
-                            contentDescription = null,
-                            tint = Color.Gray
-                        )
-                    }
-                }
             }
         }
     }

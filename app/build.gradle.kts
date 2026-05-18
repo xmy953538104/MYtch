@@ -120,7 +120,7 @@ android {
             }
         }
         buildConfigField("String", "buildKPV", "\"$kernelPatchVersion\"")
-        base.archivesName = "Mync_${managerVersionCode}_${managerVersionName}_${branchName}"
+        base.archivesName = "Myboot_${managerVersionCode}_${managerVersionName}_${branchName}"
     }
 
     compileOptions {

@@ -21,5 +21,5 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "Mync"
+rootProject.name = "Myboot"
 include(":app")

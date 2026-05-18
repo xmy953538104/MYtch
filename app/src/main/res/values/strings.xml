@@ -1,6 +1,6 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name" translatable="false">Mync</string>
+    <string name="app_name" translatable="false">Myboot</string>
 
     <string name="home">Home</string>
 
@@ -30,9 +30,7 @@
     <string name="system_default">System default</string>
     <string name="settings_global_namespace_mode">Global namespace mode</string>
     <string name="settings_global_namespace_mode_summary">All root sessions use the global mount namespace</string>
-    <string name="settings_clear_super_key_dialog">Do you really want to proceed?</string>
-
-    <string name="settings_check_update">Check for updates</string>
+<string name="settings_check_update">Check for updates</string>
     <string name="settings_check_update_summary">Automatically check for updates when opening the app</string>
 
     <string name="home_learn_apatch">Learn APatch</string>
@@ -43,11 +41,7 @@
     <string name="save_log">Save logs</string>
     <string name="log_saved">Logs saved</string>
     <string name="safe_mode">Safe mode</string>
-
-    <string name="super_key">SuperKey</string>
-    <string name="patch_set_superkey">Set SuperKey</string>
-    <string name="home_patch_set_key_desc">Only credential for KernelPatch</string>
-    <string name="home_patch_next_step">Next step</string>
+<string name="home_patch_next_step">Next step</string>
 
     <string name="home_not_installed">Not installed</string>
     <string name="home_install_unknown">KernelPatch not installed</string>
@@ -98,12 +92,7 @@
     <string name="patch_item_extra_kpm_desciption">Description:</string>
     <string name="patch_item_extra_args">Args:</string>
     <string name="patch_item_extra_event">Event:</string>
-    <string name="patch_item_skey">SuperKey</string>
-    <string name="patch_custom_superkey">Custom SuperKey</string>
-    <string name="patch_custom_superkey_summary">still can use superkey manager root, now we are verify manager signature by kernel</string>
-    <string name="patch_item_set_skey_label">The SuperKey should be 8-63 characters long and include numbers and letters, but no special characters.</string>
-
-    <string name="home_kernel">Kernel version</string>
+<string name="home_kernel">Kernel version</string>
     <string name="home_manager_version">Manager version</string>
     <string name="home_fingerprint">Fingerprint</string>
 
@@ -130,7 +119,7 @@
     <string name="kpm_unload_confirm">Unload %s module?</string>
     <string name="kpm_unload">Unload</string>
     <string name="kpm_control">Control</string>
-    <string name="kpm_apm_empty">No module loaded</string>
+    <string name="kpm_empty">No module loaded</string>
     <string name="kpm_version">Version</string>
     <string name="kpm_license">License</string>
     <string name="kpm_author">Author</string>
@@ -141,44 +130,12 @@
     <string name="su_selinux_via_hook">Bypass via hook</string>
     <string name="su_pkg_excluded_label">Exclude</string>
     <string name="su_pkg_excluded_setting_title">Exclude modifications</string>
-    <string name="su_pkg_excluded_setting_summary">Enabling this option will allow APatch to restore any files modified by the modules of this app.</string>
-    <string name="su_show_system_apps">Show system apps</string>
+    <string name="su_pkg_excluded_setting_summary">Exclude this app from AP modification tracking.</string><string name="su_show_system_apps">Show system apps</string>
     <string name="su_hide_system_apps">Hide system apps</string>
     <string name="su_refresh">Refresh</string>
-
-    <string name="apm">APModule</string>
-    <string name="apm_not_installed">AndroidPatch not installed</string>
-    <string name="apm_failed_to_enable">Failed to enable module: %s</string>
-    <string name="apm_failed_to_disable">Failed to disable module: %s</string>
-    <string name="apm_empty">No module installed</string>
-    <string name="apm_remove">Remove</string>
-    <string name="apm_undo">Undo</string>
-    <string name="apm_install">Install</string>
-    <string name="apm_uninstall_confirm">Uninstall the %s module?</string>
-    <string name="metamodule_uninstall_confirm">"Are you sure you want to uninstall module %s? This action will affect all modules, and certain features provided by the metamodule (such as mounting) will no longer work.  "</string>
-    <string name="apm_uninstall_success">%s uninstalled</string>
-    <string name="apm_uninstall_failed">Failed to uninstall: %s</string>
-    <string name="apm_module_undo_uninstall_success">Successfully canceled uninstall of %s</string>
-    <string name="apm_module_undo_uninstall_failed">Failed to undo uninstall: %s</string>
-    <string name="apm_version">Version</string>
-    <string name="apm_author">Author</string>
-    <string name="apm_desc">Desc</string>
-    <string name="apm_overlay_fs_not_available">Modules are unavailable as OverlayFS is disabled by the kernel!</string>
-    <string name="apm_magisk_conflict">Modules are unavailable due to a conflict with Magisk!</string>
-    <string name="apm_reboot_to_apply">Reboot to take effect</string>
-    <string name="apm_changelog">Changelog</string>
-    <string name="apm_update">Update</string>
-    <string name="apm_downloading">Downloading module: %s</string>
-    <string name="apm_start_downloading">Start downloading: %s</string>
-    <string name="apm_new_version_available">New version %s is available, click to upgrade.</string>
-
-    <string name="warning_of_meta_module_title">Require Meta module</string>
-    <string name="warning_of_meta_module_summary">This module want to mount /system, meta module will handle that. Otherwise, it might not work.</string>
-    <string name="meta_module_disabled">module not mounted, because metamodule disabled</string>
-    <string name="meta_module_removed">module not mounted, because metamodule being delete</string>
-    <string name="no_meta_module_installed">module not mounted, because metamodule not installed</string>
-
-    <string name="hide_apatch_manager">Hide APatch Manager</string>
+<string name="changelog">Changelog</string>
+    <string name="update">Update</string>
+<string name="hide_apatch_manager">Hide APatch Manager</string>
     <string name="hide_apatch_manager_summary">Install a proxy app with a random package ID and custom app label</string>
     <string name="hide_apatch_dialog_new_manager_name">New manager name</string>
     <string name="hide_apatch_dialog_summary">It will be used as the new app label shown in launcher</string>
@@ -186,18 +143,7 @@
 
     <string name="setting_reset_su_path">Reset su path</string>
     <string name="setting_reset_su_new_path">New full path</string>
-
-    <string name="settings_config_superkey">Configure SuperKey</string>
-    <string name="settings_config_superkey_summary">Required if your patched boot uses a custom SuperKey. Enter the same key here so the manager can detect the kernel patch.</string>
-    <string name="settings_config_superkey_hint">Enter the SuperKey you used when patching boot. Min 8 printable ASCII chars. Leave blank then re-enter to clear.</string>
-    <string name="settings_config_superkey_saved">SuperKey saved. Restart the app if state is not refreshed.</string>
-
-    <string name="apm_webui_open">Open</string>
-    <string name="apm_action">Action</string>
-    <string name="enable_web_debugging">Enable WebView debugging</string>
-    <string name="enable_web_debugging_summary">Can be used to debug WebUI. Please enable only when needed.</string>
-
-    <string name="home_new_apatch_found">New version %s is available, click to upgrade.</string>
+<string name="home_new_apatch_found">New version %s is available, click to upgrade.</string>
 
     <string name="mode_select_page_title">Install</string>
     <string name="mode_select_page_patch_and_install">Patch and install</string>
@@ -249,8 +195,7 @@
     <string name="teal_theme">Teal</string>
     <string name="yellow_theme">Yellow</string>
     <string name="about_app_version">Version %1$s</string>
-    <string name="about_app_desc">Kernel root solution with only a stripped kernel image, providing the ability of mounting system module and hooking kernel function.</string>
-    <string name="about_github" translatable="false">GitHub</string>
+    <string name="about_app_desc">KernelPatch-based root manager focused on superuser permission control.</string><string name="about_github" translatable="false">GitHub</string>
     <string name="about_weblate" translatable="false">Weblate</string>
     <string name="about_telegram_channel">Telegram channel</string>
     <string name="about_telegram_group">Telegram group</string>

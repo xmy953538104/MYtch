@@ -78,10 +78,6 @@ fun getBugreportFile(context: Context): File {
         pw.println("SafeMode: $safeMode")
     }
 
-    // modules
-    val modulesFile = File(bugreportDir, "modules.json")
-    modulesFile.writeText(listModules())
-
     val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd_HH_mm")
     val current = LocalDateTime.now().format(formatter)
 
@@ -94,4 +90,3 @@ fun getBugreportFile(context: Context): File {
 
     return targetFile
 }
-

@@ -25,7 +25,6 @@ const SUPERCALL_SU_REVOKE_UID: c_long = 0x1101;
 const SUPERCALL_SU_NUMS: c_long = 0x1102;
 const SUPERCALL_SU_LIST: c_long = 0x1103;
 const SUPERCALL_SU_RESET_PATH: c_long = 0x1111;
-const SUPERCALL_SU_GET_SAFEMODE: c_long = 0x1112;
 
 const SUPERCALL_SCONTEXT_LEN: usize = 0x60;
 
@@ -104,27 +103,6 @@ fn sc_set_ap_mod_exclude(key: &CStr, uid: i64, exclude: i32) -> c_long {
     )
 }
 
-pub fn sc_su_get_safemode(key: &CStr) -> c_long {
-    if key.to_bytes().is_empty() {
-        warn!("[sc_su_get_safemode] null superkey, tell apd we are not in safemode!");
-        return 0;
-    }
-
-    let key_ptr = key.as_ptr();
-    if key_ptr.is_null() {
-        warn!("[sc_su_get_safemode] superkey pointer is null!");
-        return 0;
-    }
-
-    unsafe {
-        syscall(
-            __NR_SUPERCALL,
-            key_ptr,
-            ver_and_cmd(SUPERCALL_SU_GET_SAFEMODE),
-        ) as c_long
-    }
-}
-
 fn sc_su(key: &CStr, profile: &SuProfile) -> c_long {
     if key.to_bytes().is_empty() {
         return (-EINVAL).into();
@@ -193,8 +171,8 @@ fn convert_string_to_u8_array(s: &str) -> [u8; SUPERCALL_SCONTEXT_LEN] {
     u8_array
 }
 
-fn convert_superkey(s: &Option<String>) -> Option<CString> {
-    s.as_ref().and_then(|s| CString::new(s.clone()).ok())
+fn trusted_key() -> CString {
+    CString::new("su").expect("trusted key is static")
 }
 
 pub fn refresh_ap_package_list(skey: &CStr, mutex: &Arc<Mutex<()>>) {
@@ -258,44 +236,35 @@ pub fn refresh_ap_package_list(skey: &CStr, mutex: &Arc<Mutex<()>>) {
     }
 }
 
-pub fn privilege_apd_profile(superkey: &Option<String>) {
-    let key = convert_superkey(superkey);
-
+pub fn privilege_apd_profile() {
+    let key = trusted_key();
     let all_allow_ctx = "u:r:magisk:s0";
     let profile = SuProfile {
         uid: process::id().try_into().expect("PID conversion failed"),
         to_uid: 0,
         scontext: convert_string_to_u8_array(all_allow_ctx),
     };
-    if let Some(ref key) = key {
-        let result = sc_su(key, &profile);
-        info!("[privilege_apd_profile] result = {}", result);
-    }
+    let result = sc_su(&key, &profile);
+    info!("[privilege_apd_profile] result = {}", result);
 }
 
-pub fn init_load_su_path(superkey: &Option<String>) {
+pub fn init_load_su_path() {
     let su_path_file = "/data/adb/ap/su_path";
 
     match read_file_to_string(su_path_file) {
         Ok(su_path) => {
-            let superkey_cstr = convert_superkey(superkey);
-
-            match superkey_cstr {
-                Some(superkey_cstr) => match CString::new(su_path.trim()) {
-                    Ok(su_path_cstr) => {
-                        let result = sc_su_reset_path(&superkey_cstr, &su_path_cstr);
-                        if result == 0 {
-                            info!("suPath load successfully");
-                        } else {
-                            warn!("Failed to load su path, error code: {}", result);
-                        }
+            let key = trusted_key();
+            match CString::new(su_path.trim()) {
+                Ok(su_path_cstr) => {
+                    let result = sc_su_reset_path(&key, &su_path_cstr);
+                    if result == 0 {
+                        info!("suPath load successfully");
+                    } else {
+                        warn!("Failed to load su path, error code: {}", result);
                     }
-                    Err(e) => {
-                        warn!("Failed to convert su_path: {}", e);
-                    }
-                },
-                _ => {
-                    warn!("Superkey is None, skipping...");
+                }
+                Err(e) => {
+                    warn!("Failed to convert su_path: {}", e);
                 }
             }
         }

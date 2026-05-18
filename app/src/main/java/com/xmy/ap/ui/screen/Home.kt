@@ -725,8 +725,8 @@ fun UpdateCard() {
     val changelog = newVersion.changelog
 
     val uriHandler = LocalUriHandler.current
-    val title = stringResource(id = R.string.apm_changelog)
-    val updateText = stringResource(id = R.string.apm_update)
+    val title = stringResource(id = R.string.changelog)
+    val updateText = stringResource(id = R.string.update)
 
     AnimatedVisibility(
         visible = newVersionCode > currentVersionCode,

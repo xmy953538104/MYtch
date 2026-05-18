@@ -30,7 +30,6 @@ import androidx.compose.material.icons.filled.BugReport
 import androidx.compose.material.icons.filled.ColorLens
 import androidx.compose.material.icons.filled.Commit
 import androidx.compose.material.icons.filled.DarkMode
-import androidx.compose.material.icons.filled.DeveloperMode
 import androidx.compose.material.icons.filled.Engineering
 import androidx.compose.material.icons.filled.FormatColorFill
 import androidx.compose.material.icons.filled.InvertColors
@@ -38,7 +37,6 @@ import androidx.compose.material.icons.filled.Save
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.Translate
 import androidx.compose.material.icons.filled.Update
-import androidx.compose.material.icons.filled.VpnKey
 import androidx.compose.material3.AlertDialogDefaults
 import androidx.compose.material3.BasicAlertDialog
 import androidx.compose.material3.Button
@@ -95,7 +93,6 @@ import com.xmy.ap.util.isGlobalNamespaceEnabled
 import com.xmy.ap.util.outputStream
 import com.xmy.ap.util.rootShellForResult
 import com.xmy.ap.util.setGlobalNamespaceEnabled
-import com.xmy.ap.util.APatchKeyHelper
 import com.xmy.ap.util.ui.APDialogBlurBehindUtils
 import com.xmy.ap.util.ui.LocalSnackbarHost
 import com.xmy.ap.util.ui.NavigationBarsSpacer
@@ -137,11 +134,6 @@ fun SettingScreen() {
         val showResetSuPathDialog = remember { mutableStateOf(false) }
         if (showResetSuPathDialog.value) {
             ResetSUPathDialog(showResetSuPathDialog)
-        }
-
-        val showSuperKeyDialog = remember { mutableStateOf(false) }
-        if (showSuperKeyDialog.value) {
-            ConfigSuperKeyDialog(showSuperKeyDialog)
         }
 
         val showThemeChooseDialog = remember { mutableStateOf(false) }
@@ -200,26 +192,6 @@ fun SettingScreen() {
                         )
                         isGlobalNamespaceEnabled = it
                     })
-            }
-
-            // WebView Debug
-            if (aPatchReady) {
-                var enableWebDebugging by rememberSaveable {
-                    mutableStateOf(
-                        prefs.getBoolean("enable_web_debugging", false)
-                    )
-                }
-                SwitchItem(
-                    icon = Icons.Filled.DeveloperMode,
-                    title = stringResource(id = R.string.enable_web_debugging),
-                    summary = stringResource(id = R.string.enable_web_debugging_summary),
-                    checked = enableWebDebugging
-                ) {
-                    APApplication.sharedPreferences.edit {
-                        putBoolean("enable_web_debugging", it)
-                    }
-                    enableWebDebugging = it
-                }
             }
 
             // Check Update
@@ -337,27 +309,6 @@ fun SettingScreen() {
                         showResetSuPathDialog.value = true
                     })
             }
-
-            // SuperKey configuration (always available so KP can be detected)
-            ListItem(
-                leadingContent = {
-                    Icon(
-                        Icons.Filled.VpnKey,
-                        stringResource(id = R.string.settings_config_superkey)
-                    )
-                },
-                supportingContent = {
-                    Text(
-                        text = stringResource(id = R.string.settings_config_superkey_summary),
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.outline
-                    )
-                },
-                headlineContent = { Text(stringResource(id = R.string.settings_config_superkey)) },
-                modifier = Modifier.clickable {
-                    showSuperKeyDialog.value = true
-                }
-            )
 
             // language
             ListItem(headlineContent = {
@@ -684,90 +635,6 @@ fun LanguageDialog(showLanguageDialog: MutableState<Boolean>) {
                     }
                 }
             }
-            val dialogWindowProvider = LocalView.current.parent as DialogWindowProvider
-            APDialogBlurBehindUtils.setupWindowBlurListener(dialogWindowProvider.window)
-        }
-    }
-}
-
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun ConfigSuperKeyDialog(showDialog: MutableState<Boolean>) {
-    val context = LocalContext.current
-    var skey by remember { mutableStateOf(APApplication.superKey) }
-    val isValid = skey.length >= 8 && skey.all { it.code in 0x21..0x7E }
-    BasicAlertDialog(
-        onDismissRequest = { showDialog.value = false }, properties = DialogProperties(
-            decorFitsSystemWindows = true,
-            usePlatformDefaultWidth = false,
-        )
-    ) {
-        Surface(
-            modifier = Modifier
-                .width(310.dp)
-                .wrapContentHeight(),
-            shape = RoundedCornerShape(30.dp),
-            tonalElevation = AlertDialogDefaults.TonalElevation,
-            color = AlertDialogDefaults.containerColor,
-        ) {
-            Column(modifier = Modifier.padding(PaddingValues(all = 24.dp))) {
-                Box(
-                    Modifier
-                        .padding(PaddingValues(bottom = 12.dp))
-                        .align(Alignment.Start)
-                ) {
-                    Text(
-                        text = stringResource(id = R.string.settings_config_superkey),
-                        style = MaterialTheme.typography.headlineSmall
-                    )
-                }
-                Box(
-                    Modifier
-                        .padding(PaddingValues(bottom = 8.dp))
-                        .align(Alignment.Start)
-                ) {
-                    Text(
-                        text = stringResource(id = R.string.settings_config_superkey_hint),
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.outline
-                    )
-                }
-                Box(
-                    Modifier
-                        .weight(weight = 1f, fill = false)
-                        .padding(PaddingValues(bottom = 12.dp))
-                        .align(Alignment.Start)
-                ) {
-                    OutlinedTextField(
-                        value = skey,
-                        onValueChange = { skey = it },
-                        label = { Text(stringResource(id = R.string.patch_set_superkey)) },
-                        visualTransformation = VisualTransformation.None,
-                    )
-                }
-
-                Row(
-                    modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End
-                ) {
-                    TextButton(onClick = { showDialog.value = false }) {
-                        Text(stringResource(id = android.R.string.cancel))
-                    }
-
-                    Button(enabled = isValid, onClick = {
-                        showDialog.value = false
-                        APApplication.superKey = skey
-                        Toast.makeText(
-                            context,
-                            context.getString(R.string.settings_config_superkey_saved),
-                            Toast.LENGTH_SHORT
-                        ).show()
-                    }) {
-                        Text(stringResource(id = android.R.string.ok))
-                    }
-                }
-            }
-
             val dialogWindowProvider = LocalView.current.parent as DialogWindowProvider
             APDialogBlurBehindUtils.setupWindowBlurListener(dialogWindowProvider.window)
         }
