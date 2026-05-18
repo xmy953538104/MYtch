@@ -30,6 +30,7 @@ import java.text.Collator
 import java.util.Locale
 import kotlin.concurrent.thread
 import kotlin.coroutines.resume
+import kotlin.coroutines.resumeWithException
 import kotlin.coroutines.suspendCoroutine
 
 
@@ -85,14 +86,24 @@ class SuperUserViewModel : ViewModel() {
 
     private suspend inline fun connectRootService(
         crossinline onDisconnect: () -> Unit = {}
-    ): Pair<IBinder, ServiceConnection> = suspendCoroutine {
+    ): Pair<IBinder, ServiceConnection> = suspendCoroutine { continuation ->
+        var shell = APatchCli.SHELL
+        if (!shell.isRoot) {
+            APatchCli.refresh()
+            shell = APatchCli.SHELL
+        }
+        if (!shell.isRoot) {
+            continuation.resumeWithException(IllegalStateException("Root shell unavailable"))
+            return@suspendCoroutine
+        }
+
         val connection = object : ServiceConnection {
             override fun onServiceDisconnected(name: ComponentName?) {
                 onDisconnect()
             }
 
             override fun onServiceConnected(name: ComponentName?, binder: IBinder?) {
-                it.resume(binder as IBinder to this)
+                continuation.resume(binder as IBinder to this)
             }
         }
         val intent = Intent(apApp, RootServices::class.java)
@@ -101,7 +112,6 @@ class SuperUserViewModel : ViewModel() {
             Shell.EXECUTOR,
             connection,
         )
-        val shell = APatchCli.SHELL
         task?.let { it1 -> shell.execTask(it1) }
     }
 
@@ -170,4 +180,3 @@ class SuperUserViewModel : ViewModel() {
         }
     }
 }
-
