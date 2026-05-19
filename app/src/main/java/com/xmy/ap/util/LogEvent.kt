@@ -73,7 +73,7 @@ fun getBugreportFile(context: Context): File {
         pw.println("Sysname: ${uname.sysname}")
 
         pw.println("KPatch: ${Version.installedKPVString()}")
-        pw.println("APatch: ${Version.installedApdVString}")
+        pw.println("APatch: ${Version.installedApdVUInt()}")
         val safeMode = false
         pw.println("SafeMode: $safeMode")
     }

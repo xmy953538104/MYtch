@@ -40,24 +40,24 @@ fun createRootShell(globalMnt: Boolean = false): Shell {
     Shell.enableVerboseLogging = BuildConfig.DEBUG
     val builder = Shell.Builder.create().setInitializers(RootShellInitializer::class.java)
     return try {
-        builder.build(
-            SUPERCMD, APApplication.ROOT_KEY, "-Z", APApplication.MAGISK_SCONTEXT
-        )
+        if (globalMnt) {
+            builder.build(
+                getKPatchPath(), APApplication.ROOT_KEY, "su", "-Z", APApplication.MAGISK_SCONTEXT, "--mount-master"
+            )
+        } else {
+            builder.build(
+                getKPatchPath(), APApplication.ROOT_KEY, "su", "-Z", APApplication.MAGISK_SCONTEXT
+            )
+        }
     } catch (e: Throwable) {
-        Log.e(TAG, "su failed: ", e)
+        Log.e(TAG, "kpatch su failed: ", e)
         return try {
-            Log.e(TAG, "retry compat kpatch su")
-            if (globalMnt) {
-                builder.build(
-                    getKPatchPath(), APApplication.ROOT_KEY, "su", "-Z", APApplication.MAGISK_SCONTEXT, "--mount-master"
-                )
-            }else{
-                builder.build(
-                    getKPatchPath(), APApplication.ROOT_KEY, "su", "-Z", APApplication.MAGISK_SCONTEXT
-                )
-            }
+            Log.e(TAG, "retry supercmd su")
+            builder.build(
+                SUPERCMD, APApplication.ROOT_KEY, "-Z", APApplication.MAGISK_SCONTEXT
+            )
         } catch (e: Throwable) {
-            Log.e(TAG, "retry kpatch su failed: ", e)
+            Log.e(TAG, "retry supercmd su failed: ", e)
             return try {
                 Log.e(TAG, "retry su: ", e)
                 if (globalMnt) {
@@ -77,14 +77,14 @@ private fun createMainRootShell() : Shell {
     val builder = Shell.Builder.create()
         .setInitializers(RootShellInitializer::class.java)
     val shell = try {
-        builder.build(SUPERCMD, APApplication.ROOT_KEY, "-Z", APApplication.MAGISK_SCONTEXT)
+        builder.build(getKPatchPath(), APApplication.ROOT_KEY, "su", "-Z", APApplication.MAGISK_SCONTEXT)
     } catch (e: Throwable) {
-        Log.e(TAG, "su failed: ", e)
-        builder.setCommands(getKPatchPath(), APApplication.ROOT_KEY, "su", "-Z", APApplication.MAGISK_SCONTEXT)
+        Log.e(TAG, "kpatch su failed: ", e)
+        builder.setCommands(SUPERCMD, APApplication.ROOT_KEY, "-Z", APApplication.MAGISK_SCONTEXT)
         try {
             builder.build()
         } catch (e: Throwable) {
-            Log.e(TAG, "retry kpatch su failed: ", e)
+            Log.e(TAG, "retry supercmd su failed: ", e)
             builder.setCommands("su")
             try {
                 builder.build()
@@ -159,17 +159,17 @@ fun tryGetRootShell(): Shell {
     val builder = Shell.Builder.create()
     return try {
         builder.build(
-            SUPERCMD, APApplication.ROOT_KEY, "-Z", APApplication.MAGISK_SCONTEXT
+            getKPatchPath(), APApplication.ROOT_KEY, "su", "-Z", APApplication.MAGISK_SCONTEXT
         )
     } catch (e: Throwable) {
-        Log.e(TAG, "su failed: ", e)
+        Log.e(TAG, "kpatch su failed: ", e)
         return try {
-            Log.e(TAG, "retry compat kpatch su")
+            Log.e(TAG, "retry supercmd su")
             builder.build(
-                getKPatchPath(), APApplication.ROOT_KEY, "su", "-Z", APApplication.MAGISK_SCONTEXT
+                SUPERCMD, APApplication.ROOT_KEY, "-Z", APApplication.MAGISK_SCONTEXT
             )
         } catch (e: Throwable) {
-            Log.e(TAG, "retry kpatch su failed: ", e)
+            Log.e(TAG, "retry supercmd su failed: ", e)
             return try {
                 Log.e(TAG, "retry su: ", e)
                 builder.build("su")
