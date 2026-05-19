@@ -493,6 +493,7 @@ class PatchesViewModel : ViewModel() {
                 APApplication.markNeedReboot()
             } else if (mode == PatchMode.PATCH_ONLY) {
                 val newBootFile = patchDir.getChildFile("new-boot.img")
+                restoreAppAccess(newBootFile)
                 val outDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
                 if (!outDir.exists()) outDir.mkdirs()
                 val outPath = File(outDir, outFilename)
@@ -531,12 +532,20 @@ class PatchesViewModel : ViewModel() {
 
     @RequiresApi(Build.VERSION_CODES.Q)
     fun insertDownload(context: Context, outUri: Uri?, inputUri: Uri): Boolean {
-        if (outUri == null) return false
+        if (outUri == null) {
+            Log.e(TAG, "create download uri failed")
+            return false
+        }
 
         try {
             val resolver = context.contentResolver
-            resolver.openInputStream(inputUri)?.use { inputStream ->
-                resolver.openOutputStream(outUri)?.use { outputStream ->
+            val input = resolver.openInputStream(inputUri)
+                ?: throw FileNotFoundException("Cannot open input uri: $inputUri")
+            val output = resolver.openOutputStream(outUri)
+                ?: throw FileNotFoundException("Cannot open output uri: $outUri")
+
+            input.use { inputStream ->
+                output.use { outputStream ->
                     inputStream.copyTo(outputStream)
                 }
             }
@@ -546,9 +555,26 @@ class PatchesViewModel : ViewModel() {
             resolver.update(outUri, contentValues, null, null)
 
             return true
-        } catch (_: FileNotFoundException) {
+        } catch (e: Exception) {
+            Log.e(TAG, "write patched boot image failed", e)
+            runCatching {
+                context.contentResolver.delete(outUri, null, null)
+            }
             return false
         }
+    }
+
+    private fun restoreAppAccess(file: File) {
+        val path = shellQuote(file.path)
+        shell.newJob().add(
+            "chown ${Os.getuid()}:${Os.getgid()} $path 2>/dev/null || true",
+            "chmod 0600 $path 2>/dev/null || true",
+            "restorecon -F $path 2>/dev/null || true",
+        ).exec()
+    }
+
+    private fun shellQuote(value: String): String {
+        return "'" + value.replace("'", "'\"'\"'") + "'"
     }
 
     fun File.getUri(context: Context): Uri {
